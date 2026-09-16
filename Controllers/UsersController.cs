@@ -13,9 +13,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 1,
-                Username = "nguyenvana",
-                Email = "ana@gmail.com",
-                FullName = "Nguyễn Văn A",
+                Username = "nguyenvanan",
+                Email = "an.nguyen@gmail.com",
+                FullName = "Nguyễn Văn An",
                 Phone = "0901234567",
                 Role = "Member",
                 MembershipPackage = "VIP",
@@ -27,9 +27,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 2,
-                Username = "tranvanb",
-                Email = "banb@gmail.com",
-                FullName = "Trần Văn B",
+                Username = "tranvanbinh",
+                Email = "binh.tran@gmail.com",
+                FullName = "Trần Văn Bình",
                 Phone = "0912345678",
                 Role = "Member",
                 MembershipPackage = "Basic",
@@ -41,9 +41,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 3,
-                Username = "lethic",
-                Email = "chicle@gmail.com",
-                FullName = "Lê Thị C",
+                Username = "lethicam",
+                Email = "cam.le@gmail.com",
+                FullName = "Lê Thị Cẩm",
                 Phone = "0923456789",
                 Role = "Trainer",
                 MembershipPackage = "Diamond",
@@ -55,9 +55,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 4,
-                Username = "phamvand",
-                Email = "d.pham@gmail.com",
-                FullName = "Phạm Văn D",
+                Username = "phamvandung",
+                Email = "dung.pham@gmail.com",
+                FullName = "Phạm Văn Dũng",
                 Phone = "0934567890",
                 Role = "Admin",
                 MembershipPackage = "Diamond",
@@ -69,9 +69,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 5,
-                Username = "hoangthie",
-                Email = "ehoang@gmail.com",
-                FullName = "Hoàng Thị E",
+                Username = "hoangthimai",
+                Email = "mai.hoang@gmail.com",
+                FullName = "Hoàng Thị Mai",
                 Phone = "0945678901",
                 Role = "Member",
                 MembershipPackage = "VIP",
@@ -83,9 +83,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 6,
-                Username = "vovanf",
-                Email = "fvovo@gmail.com",
-                FullName = "Võ Văn F",
+                Username = "vovanphuc",
+                Email = "phuc.vo@gmail.com",
+                FullName = "Võ Văn Phúc",
                 Phone = "0956789012",
                 Role = "Member",
                 MembershipPackage = "Basic",
@@ -97,9 +97,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 7,
-                Username = "dangthig",
-                Email = "gdang@gmail.com",
-                FullName = "Đặng Thị G",
+                Username = "dangthigiang",
+                Email = "giang.dang@gmail.com",
+                FullName = "Đặng Thị Giang",
                 Phone = "0967890123",
                 Role = "Trainer",
                 MembershipPackage = "Diamond",
@@ -111,9 +111,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 8,
-                Username = "buivanh",
-                Email = "hbuivan@gmail.com",
-                FullName = "Bùi Văn H",
+                Username = "buivanhuy",
+                Email = "huy.bui@gmail.com",
+                FullName = "Bùi Văn Huy",
                 Phone = "0978901234",
                 Role = "Member",
                 MembershipPackage = "VIP",
@@ -125,9 +125,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 9,
-                Username = "ngothii",
-                Email = "ingothi@gmail.com",
-                FullName = "Ngô Thị I",
+                Username = "ngothiyen",
+                Email = "yen.ngo@gmail.com",
+                FullName = "Ngô Thị Yến",
                 Phone = "0989012345",
                 Role = "Member",
                 MembershipPackage = "Basic",
@@ -139,9 +139,9 @@ namespace Buoi2_WebAPI.Controllers
             new UserResponseDto
             {
                 Id = 10,
-                Username = "dinhvank",
-                Email = "kdinh@gmail.com",
-                FullName = "Đinh Văn K",
+                Username = "dinhvankhoa",
+                Email = "khoa.dinh@gmail.com",
+                FullName = "Đinh Văn Vũ",
                 Phone = "0990123456",
                 Role = "Member",
                 MembershipPackage = "Diamond",
@@ -155,11 +155,79 @@ namespace Buoi2_WebAPI.Controllers
         private static readonly string _adminUsername = "admin";
         private static readonly string _adminPassword = "123456";
 
-        // GET api/users
+        // GET api/users?search=...&role=...&package=...
         [HttpGet]
-        public ActionResult<List<UserResponseDto>> GetAll()
+        public ActionResult GetAll(
+            [FromQuery] string? search,
+            [FromQuery] UserRole? role,
+            [FromQuery] MembershipPackageType? package)
         {
-            return Ok(_fakeUsers);
+            var query = _fakeUsers.AsEnumerable();
+            bool hasFilter = false;
+
+            // 1. Lọc theo từ khóa tìm kiếm (Tên hoặc Username)
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                hasFilter = true;
+                query = query.Where(u => u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                      || u.Username.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 2. Lọc theo Role (Admin, Member, Trainer...)
+            if (role.HasValue)
+            {
+                hasFilter = true;
+                string roleStr = role.Value.ToString();
+                query = query.Where(u => u.Role.Equals(roleStr, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 3. Lọc theo Gói tập Gym (Basic, VIP, Diamond...)
+            if (package.HasValue)
+            {
+                hasFilter = true;
+                string packageStr = package.Value.ToString();
+                query = query.Where(u => u.MembershipPackage.Equals(packageStr, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var matchedUsers = query.ToList();
+
+            // Khi có sử dụng bất kỳ bộ lọc nào -> Chỉ trả về kết quả lọc (không hiện stats)
+            if (hasFilter)
+            {
+                return Ok(new
+                {
+                    filters = new
+                    {
+                        search,
+                        role = role?.ToString(),
+                        package = package?.ToString()
+                    },
+                    totalFound = matchedUsers.Count,
+                    users = matchedUsers
+                });
+            }
+
+            // Khi không lọc (lấy tất cả) -> Trả về toàn bộ danh sách kèm thống kê
+            var statsByRole = _fakeUsers
+                .GroupBy(u => u.Role)
+                .Select(g => new { role = g.Key, count = g.Count() })
+                .ToList();
+
+            var statsByPackage = _fakeUsers
+                .GroupBy(u => u.MembershipPackage)
+                .Select(g => new { package = g.Key, count = g.Count() })
+                .ToList();
+
+            return Ok(new
+            {
+                totalSystemUsers = _fakeUsers.Count,
+                stats = new
+                {
+                    byRole = statsByRole,
+                    byMembershipPackage = statsByPackage
+                },
+                users = _fakeUsers
+            });
         }
 
         // GET api/users/{id}
@@ -243,8 +311,13 @@ namespace Buoi2_WebAPI.Controllers
             if (user == null)
                 return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
 
-            user.FullName = request.FullName;
-            user.Phone = request.Phone;
+            user.FullName = string.IsNullOrWhiteSpace(request.FullName) ? user.FullName : request.FullName;
+            user.Email = string.IsNullOrWhiteSpace(request.Email) ? user.Email : request.Email;
+            user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? user.Phone : request.Phone;
+            user.Role = string.IsNullOrWhiteSpace(request.Role) ? user.Role : request.Role;
+            user.MembershipPackage = string.IsNullOrWhiteSpace(request.MembershipPackage) ? user.MembershipPackage : request.MembershipPackage;
+            user.MembershipStatus = string.IsNullOrWhiteSpace(request.MembershipStatus) ? user.MembershipStatus : request.MembershipStatus;
+            user.IsActive = request.IsActive;
 
             return Ok(user);
         }
@@ -260,48 +333,6 @@ namespace Buoi2_WebAPI.Controllers
             _fakeUsers.Remove(user);
 
             return Ok(new { message = $"Đã xóa người dùng '{user.Username}' (Id = {id}) thành công." });
-        }
-
-        // GET api/users/search?name=nguyen
-        [HttpGet("search")]
-        public ActionResult SearchByName([FromQuery] string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                return BadRequest(new { message = "Vui lòng nhập tên cần tìm." });
-
-            var results = _fakeUsers
-                .Where(u => u.FullName.Contains(name, StringComparison.OrdinalIgnoreCase)
-                         || u.Username.Contains(name, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            return Ok(new
-            {
-                keyword = name,
-                totalFound = results.Count,
-                users = results
-            });
-        }
-
-        // GET api/users/stats - Thống kê theo Role và gói tập
-        [HttpGet("stats")]
-        public ActionResult GetStats()
-        {
-            var statsByRole = _fakeUsers
-                .GroupBy(u => u.Role)
-                .Select(g => new { role = g.Key, count = g.Count() })
-                .ToList();
-
-            var statsByPackage = _fakeUsers
-                .GroupBy(u => u.MembershipPackage)
-                .Select(g => new { package_ = g.Key, count = g.Count() })
-                .ToList();
-
-            return Ok(new
-            {
-                totalUsers = _fakeUsers.Count,
-                byRole = statsByRole,
-                byMembershipPackage = statsByPackage
-            });
         }
     }
 }
