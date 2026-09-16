@@ -51,6 +51,104 @@ namespace Buoi2_WebAPI.Controllers
                 MembershipEndDate = new DateTime(2028, 1, 1),
                 IsActive = true,
                 CreatedAt = new DateTime(2025, 11, 5)
+            },
+            new UserResponseDto
+            {
+                Id = 4,
+                Username = "phamvand",
+                Email = "d.pham@gmail.com",
+                FullName = "Phạm Văn D",
+                Phone = "0934567890",
+                Role = "Admin",
+                MembershipPackage = "Diamond",
+                MembershipStatus = "Active",
+                MembershipEndDate = new DateTime(2029, 1, 1),
+                IsActive = true,
+                CreatedAt = new DateTime(2025, 8, 10)
+            },
+            new UserResponseDto
+            {
+                Id = 5,
+                Username = "hoangthie",
+                Email = "ehoang@gmail.com",
+                FullName = "Hoàng Thị E",
+                Phone = "0945678901",
+                Role = "Member",
+                MembershipPackage = "VIP",
+                MembershipStatus = "Active",
+                MembershipEndDate = new DateTime(2027, 8, 15),
+                IsActive = true,
+                CreatedAt = new DateTime(2026, 2, 14)
+            },
+            new UserResponseDto
+            {
+                Id = 6,
+                Username = "vovanf",
+                Email = "fvovo@gmail.com",
+                FullName = "Võ Văn F",
+                Phone = "0956789012",
+                Role = "Member",
+                MembershipPackage = "Basic",
+                MembershipStatus = "Expired",
+                MembershipEndDate = new DateTime(2026, 1, 1),
+                IsActive = false,
+                CreatedAt = new DateTime(2025, 6, 1)
+            },
+            new UserResponseDto
+            {
+                Id = 7,
+                Username = "dangthig",
+                Email = "gdang@gmail.com",
+                FullName = "Đặng Thị G",
+                Phone = "0967890123",
+                Role = "Trainer",
+                MembershipPackage = "Diamond",
+                MembershipStatus = "Active",
+                MembershipEndDate = new DateTime(2028, 5, 20),
+                IsActive = true,
+                CreatedAt = new DateTime(2025, 10, 12)
+            },
+            new UserResponseDto
+            {
+                Id = 8,
+                Username = "buivanh",
+                Email = "hbuivan@gmail.com",
+                FullName = "Bùi Văn H",
+                Phone = "0978901234",
+                Role = "Member",
+                MembershipPackage = "VIP",
+                MembershipStatus = "Active",
+                MembershipEndDate = new DateTime(2027, 11, 30),
+                IsActive = true,
+                CreatedAt = new DateTime(2026, 4, 5)
+            },
+            new UserResponseDto
+            {
+                Id = 9,
+                Username = "ngothii",
+                Email = "ingothi@gmail.com",
+                FullName = "Ngô Thị I",
+                Phone = "0989012345",
+                Role = "Member",
+                MembershipPackage = "Basic",
+                MembershipStatus = "Active",
+                MembershipEndDate = new DateTime(2027, 4, 25),
+                IsActive = true,
+                CreatedAt = new DateTime(2026, 5, 18)
+            },
+            new UserResponseDto
+            {
+                Id = 10,
+                Username = "dinhvank",
+                Email = "kdinh@gmail.com",
+                FullName = "Đinh Văn K",
+                Phone = "0990123456",
+                Role = "Member",
+                MembershipPackage = "Diamond",
+                MembershipStatus = "Active",
+                MembershipEndDate = new DateTime(2028, 2, 28),
+                IsActive = true,
+                CreatedAt = new DateTime(2026, 6, 10)
             }
         };
 
