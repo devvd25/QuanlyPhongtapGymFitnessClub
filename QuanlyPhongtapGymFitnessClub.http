@@ -1,6 +1,30 @@
 @QuanlyPhongtapGymFitnessClub_HostAddress = http://localhost:5089
 
-GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/Users
+### 1. L?y danh sách t?t c? Users (H?i viên)
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/users
 Accept: application/json
 
-###
+### 2. L?y danh sách Hu?n luy?n viên (Trainers)
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/trainers
+Accept: application/json
+
+### 3. L?c Hu?n luy?n viên Yoga
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/trainers?specialty=Yoga
+Accept: application/json
+
+### 4. L?y chi ti?t Hu?n luy?n viên Id = 1
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/trainers/1
+Accept: application/json
+
+### 5. L?y danh sách h?c viên c?a Hu?n luy?n viên Id = 1 (Nested Route)
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/trainers/1/members
+Accept: application/json
+
+### 6. L?y danh sách Nhân viên l? tân (Staffs)
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/staffs
+Accept: application/json
+
+### 7. Ð?i tr?ng thái tr?c qu?y c?a nhân viên Id = 1
+PATCH {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/staffs/1/toggle-duty
+Accept: application/json
+
