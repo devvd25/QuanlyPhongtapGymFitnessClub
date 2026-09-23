@@ -27,3 +27,7 @@ Accept: application/json
 ### 7. Đổi trạng thái trực quầy của nhân viên Id = 1
 PATCH {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/staffs/1/toggle-duty
 Accept: application/json
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/Users
+Accept: application/json
+
+###

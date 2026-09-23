@@ -1,4 +1,4 @@
-namespace Buoi2_WebAPI.Repositories
+namespace QuanlyPhongtapGymFitnessClub.Repositories
 {
     public interface IUserRepository
     {

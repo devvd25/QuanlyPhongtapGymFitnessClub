@@ -1,4 +1,4 @@
-namespace Buoi2_WebAPI.Services
+namespace QuanlyPhongtapGymFitnessClub.Services
 {
     public interface IUserService
     {

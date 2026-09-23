@@ -1,7 +1,7 @@
-using Buoi2_WebAPI.DTOs;
+using QuanlyPhongtapGymFitnessClub.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Buoi2_WebAPI.Controllers
+namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

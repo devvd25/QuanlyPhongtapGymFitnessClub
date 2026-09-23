@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations; // Thư viện validation: [Required], [MaxLength], [MinLength], [EmailAddress], [Phone], [Range]
 
-namespace Buoi2_WebAPI.DTOs
+namespace QuanlyPhongtapGymFitnessClub.DTOs
 {
     // Enum: Danh sách cố định các vai trò → Swagger tự tạo Dropdown chọn
     public enum UserRole
