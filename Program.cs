@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Buoi2_WebAPI.Data;
+using QuanlyPhongtapGymFitnessClub.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

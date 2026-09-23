@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;      // Thư viện chứa các Attribute validation: [Required], [MaxLength], [EmailAddress]...
 using System.ComponentModel.DataAnnotations.Schema; // Thư viện chứa [Key], [DatabaseGenerated] để cấu hình mapping với Database
 
-namespace Buoi2_WebAPI.Models
+namespace QuanlyPhongtapGymFitnessClub.Models
 {
     public class User
     {

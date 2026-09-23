@@ -1,0 +1,6 @@
+@QuanlyPhongtapGymFitnessClub_HostAddress = http://localhost:5089
+
+GET {{QuanlyPhongtapGymFitnessClub_HostAddress}}/api/Users
+Accept: application/json
+
+###

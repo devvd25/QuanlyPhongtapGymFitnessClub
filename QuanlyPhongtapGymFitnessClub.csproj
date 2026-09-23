@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Buoi2_WebAPI</RootNamespace>
+    <RootNamespace>QuanlyPhongtapGymFitnessClub</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

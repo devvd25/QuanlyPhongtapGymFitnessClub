@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Buoi2_WebAPI.Models;
+using QuanlyPhongtapGymFitnessClub.Models;
 
-namespace Buoi2_WebAPI.Data
+namespace QuanlyPhongtapGymFitnessClub.Data
 {
     // AppDbContext: Đại diện cho phiên làm việc với Database (Database Session)
     // Kế thừa từ DbContext của Entity Framework Core

@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Buoi2_WebAPI.Migrations
+namespace QuanlyPhongtapGymFitnessClub.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

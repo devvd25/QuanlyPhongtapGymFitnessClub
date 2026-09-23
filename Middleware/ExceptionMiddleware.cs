@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
-namespace Buoi2_WebAPI.Middleware
+namespace QuanlyPhongtapGymFitnessClub.Middleware
 {
     public class ExceptionMiddleware
     {

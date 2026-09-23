@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Buoi2_WebAPI.DTOs
+namespace QuanlyPhongtapGymFitnessClub.DTOs
 {
     public class LoginDto
     {
