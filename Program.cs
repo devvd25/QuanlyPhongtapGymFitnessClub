@@ -1,6 +1,17 @@
+using Microsoft.EntityFrameworkCore;
+using Buoi2_WebAPI.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ================= 1. CẤU HÌNH DATABASE & DEPENDENCY INJECTION =================
+// 1. Đọc chuỗi kết nối từ appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// 2. Đăng ký AppDbContext vào hệ thống Dependency Injection
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// ================= 2. ĐĂNG KÝ CÁC DỊCH VỤ KHÁC =================
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

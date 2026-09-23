@@ -89,7 +89,8 @@ namespace Buoi2_WebAPI.Models
         [Range(0, 1000)] // Số buổi PT còn lại: từ 0 đến 1000
         public int RemainingPtSessions { get; set; } = 0;
 
-        public int? AssignedTrainerId { get; set; } // FK đến Trainer phụ trách
+        // int? (nullable): cho phép null vì hội viên tập gói tự do/không thuê PT thì trường này sẽ để trống.
+        public int? AssignedTrainerId { get; set; }
 
         // ================= 5. QUẢN LÝ TRẠNG THÁI & AUDIT LOGS =================
         public bool IsActive { get; set; } = true; // true = hoạt động, false = khóa tài khoản
