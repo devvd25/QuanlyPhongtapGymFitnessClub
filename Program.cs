@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QuanlyPhongtapGymFitnessClub.Data;
 
 var builder = WebApplication.CreateBuilder(args);
