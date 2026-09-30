@@ -95,6 +95,12 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         [ForeignKey("AssignedTrainerId")]
         public virtual Trainer? AssignedTrainer { get; set; }
 
+        // Nhân viên đăng ký tài khoản cho Hội viên
+        public int? RegisteredByStaffId { get; set; }
+
+        [ForeignKey("RegisteredByStaffId")]
+        public virtual Staff? RegisteredByStaff { get; set; }
+
         // ================= 5. QUẢN LÝ TRẠNG THÁI & AUDIT LOGS =================
         public bool IsActive { get; set; } = true; // true = hoạt động, false = khóa tài khoản
         public bool IsDeleted { get; set; } = false; // Xóa mềm (Soft Delete)

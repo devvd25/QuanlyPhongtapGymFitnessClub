@@ -28,6 +28,11 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         [MaxLength(500)]
         public string? ImageUrl { get; set; }
 
+        public int? ManagedByStaffId { get; set; }
+
+        [ForeignKey("ManagedByStaffId")]
+        public virtual Staff? ManagedByStaff { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
