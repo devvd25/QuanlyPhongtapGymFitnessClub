@@ -92,6 +92,9 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         // int? (nullable): cho phép null vì hội viên tập gói tự do/không thuê PT thì trường này sẽ để trống.
         public int? AssignedTrainerId { get; set; }
 
+        [ForeignKey("AssignedTrainerId")]
+        public virtual Trainer? AssignedTrainer { get; set; }
+
         // ================= 5. QUẢN LÝ TRẠNG THÁI & AUDIT LOGS =================
         public bool IsActive { get; set; } = true; // true = hoạt động, false = khóa tài khoản
         public bool IsDeleted { get; set; } = false; // Xóa mềm (Soft Delete)

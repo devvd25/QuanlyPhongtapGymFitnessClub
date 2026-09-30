@@ -1,6 +1,7 @@
 using QuanlyPhongtapGymFitnessClub.Data;
 using QuanlyPhongtapGymFitnessClub.DTOs;
 using QuanlyPhongtapGymFitnessClub.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace QuanlyPhongtapGymFitnessClub.Services
@@ -16,7 +17,7 @@ namespace QuanlyPhongtapGymFitnessClub.Services
 
         public List<TrainerResponseDto> GetAll(string? search, string? specialty, int? minExperienceYears)
         {
-            var query = _context.Trainers.AsQueryable();
+            var query = _context.Trainers.Include(t => t.AssignedMembers).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -49,8 +50,8 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 Rating = t.Rating,
                 HourlyRate = t.HourlyRate,
                 MaxMembers = t.MaxMembers,
-                AssignedMemberIds = t.AssignedMemberIds ?? new List<int>(),
-                CurrentMembersCount = (t.AssignedMemberIds ?? new List<int>()).Count,
+                AssignedMemberIds = t.AssignedMembers != null ? t.AssignedMembers.Select(m => m.Id).ToList() : new List<int>(),
+                CurrentMembersCount = t.AssignedMembers != null ? t.AssignedMembers.Count : 0,
                 IsActive = t.IsActive,
                 CreatedAt = t.CreatedAt
             }).ToList();
@@ -58,7 +59,7 @@ namespace QuanlyPhongtapGymFitnessClub.Services
 
         public TrainerResponseDto? GetById(int id)
         {
-            var t = _context.Trainers.FirstOrDefault(x => x.Id == id);
+            var t = _context.Trainers.Include(tr => tr.AssignedMembers).FirstOrDefault(x => x.Id == id);
             if (t == null) return null;
 
             return new TrainerResponseDto
@@ -76,8 +77,8 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 Rating = t.Rating,
                 HourlyRate = t.HourlyRate,
                 MaxMembers = t.MaxMembers,
-                AssignedMemberIds = t.AssignedMemberIds ?? new List<int>(),
-                CurrentMembersCount = (t.AssignedMemberIds ?? new List<int>()).Count,
+                AssignedMemberIds = t.AssignedMembers != null ? t.AssignedMembers.Select(m => m.Id).ToList() : new List<int>(),
+                CurrentMembersCount = t.AssignedMembers != null ? t.AssignedMembers.Count : 0,
                 IsActive = t.IsActive,
                 CreatedAt = t.CreatedAt
             };
@@ -98,7 +99,6 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 Certifications = dto.Certifications,
                 HourlyRate = dto.HourlyRate,
                 MaxMembers = dto.MaxMembers,
-                AssignedMemberIds = new List<int>(),
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             };
@@ -138,12 +138,10 @@ namespace QuanlyPhongtapGymFitnessClub.Services
 
         public List<UserResponseDto> GetAssignedMembers(int trainerId)
         {
-            var trainer = _context.Trainers.FirstOrDefault(t => t.Id == trainerId);
-            if (trainer == null || trainer.AssignedMemberIds == null) return new List<UserResponseDto>();
+            var trainer = _context.Trainers.Include(t => t.AssignedMembers).FirstOrDefault(t => t.Id == trainerId);
+            if (trainer == null || trainer.AssignedMembers == null) return new List<UserResponseDto>();
 
-            var members = _context.Users
-                .Where(u => trainer.AssignedMemberIds.Contains(u.Id))
-                .ToList();
+            var members = trainer.AssignedMembers.ToList();
 
             return members.Select(u => new UserResponseDto
             {
@@ -160,18 +158,19 @@ namespace QuanlyPhongtapGymFitnessClub.Services
 
         public bool AssignMember(int trainerId, int memberId)
         {
-            var trainer = _context.Trainers.FirstOrDefault(t => t.Id == trainerId);
+            var trainer = _context.Trainers.Include(t => t.AssignedMembers).FirstOrDefault(t => t.Id == trainerId);
             if (trainer == null) return false;
 
-            var assignedIds = trainer.AssignedMemberIds ?? new List<int>();
-            
-            if (assignedIds.Count >= trainer.MaxMembers) return false;
-            if (assignedIds.Contains(memberId)) return true;
+            if (trainer.AssignedMembers.Count >= trainer.MaxMembers) return false;
+            if (trainer.AssignedMembers.Any(m => m.Id == memberId)) return true;
 
-            assignedIds.Add(memberId);
-            trainer.AssignedMemberIds = assignedIds;
-            trainer.UpdatedAt = DateTime.UtcNow;
-            _context.SaveChanges();
+            var user = _context.Users.FirstOrDefault(u => u.Id == memberId);
+            if (user != null)
+            {
+                trainer.AssignedMembers.Add(user);
+                trainer.UpdatedAt = DateTime.UtcNow;
+                _context.SaveChanges();
+            }
             
             return true;
         }
