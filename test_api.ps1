@@ -76,4 +76,5 @@ Write-Host "Toggled duty result: $($toggleResult.message) - Current OnDuty: $($t
 
 Write-Host "`n=== TEST 8: VERIFY EXISTING USERS API STILL WORKS (100% UNCHANGED) ==="
 $users = Invoke-RestMethod -Uri "http://localhost:5089/api/users" -Method Get
-Write-Host "Total system users: $($users.totalSystemUsers)"
+$userCount = if ($users.totalSystemUsers -ne $null) { $users.totalSystemUsers } else { $users.Count }
+Write-Host "Total system users: $userCount"

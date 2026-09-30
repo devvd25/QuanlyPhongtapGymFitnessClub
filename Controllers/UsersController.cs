@@ -1,199 +1,253 @@
-using QuanlyPhongtapGymFitnessClub.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using QuanlyPhongtapGymFitnessClub.Data;
+using QuanlyPhongtapGymFitnessClub.DTOs;
 using QuanlyPhongtapGymFitnessClub.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.IdentityModel.Tokens;
 
 namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class UsersController : ControllerBase
     {
+        // 1. Khai báo biến DbContext
         private readonly AppDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public UsersController(AppDbContext context)
+        // 2. Inject AppDbContext và IConfiguration thông qua Constructor
+        public UsersController(AppDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         private static readonly string _adminUsername = "admin";
-        private static readonly string _adminPassword = "123456";
+        private static readonly string _adminPassword = "password123";
 
-        // GET api/users?search=...&role=...&package=...
+        // ------------------------------------------------------------------------
+        // READ ALL (GET) - Lấy danh sách hội viên/người dùng (hỗ trợ lọc & tìm kiếm)
+        // Áp dụng Best Practice Buổi 6: async/await với ToListAsync()
+        // ------------------------------------------------------------------------
         [HttpGet]
-        public ActionResult GetAll(
+        public async Task<ActionResult<List<UserResponseDto>>> GetAll(
             [FromQuery] string? search,
             [FromQuery] string? role,
             [FromQuery] string? package)
         {
             var query = _context.Users.AsQueryable();
-            bool hasFilter = false;
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                hasFilter = true;
-                query = query.Where(u => u.FullName.Contains(search) || u.Username.Contains(search));
+                var searchLower = search.Trim().ToLower();
+                query = query.Where(u => u.FullName.ToLower().Contains(searchLower) || 
+                                         u.Username.ToLower().Contains(searchLower) ||
+                                         u.Phone.Contains(searchLower));
             }
 
             if (!string.IsNullOrWhiteSpace(role))
             {
-                hasFilter = true;
                 query = query.Where(u => u.Role == role);
             }
 
             if (!string.IsNullOrWhiteSpace(package))
             {
-                hasFilter = true;
                 query = query.Where(u => u.MembershipPackage == package);
             }
 
-            var matchedUsers = query.Select(u => new UserResponseDto
-            {
-                Id = u.Id,
-                Username = u.Username,
-                Email = u.Email,
-                FullName = u.FullName,
-                Phone = u.Phone,
-                Role = u.Role,
-                MembershipPackage = u.MembershipPackage,
-                MembershipStatus = u.MembershipStatus,
-                MembershipEndDate = u.MembershipEndDate,
-                IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt
-            }).ToList();
-
-            if (hasFilter)
-            {
-                return Ok(new
+            // Dùng LINQ .Select() để ánh xạ sang DTO (tránh lộ trường mật khẩu)
+            var users = await query
+                .OrderByDescending(u => u.CreatedAt)
+                .Select(u => new UserResponseDto
                 {
-                    filters = new
-                    {
-                        search,
-                        role,
-                        package
-                    },
-                    totalFound = matchedUsers.Count,
-                    users = matchedUsers
-                });
-            }
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    FullName = u.FullName,
+                    Phone = u.Phone,
+                    Role = u.Role,
+                    Gender = u.Gender,
+                    DateOfBirth = u.DateOfBirth,
+                    Address = u.Address,
+                    MembershipPackage = u.MembershipPackage,
+                    MembershipStatus = u.MembershipStatus,
+                    MembershipEndDate = u.MembershipEndDate,
+                    RemainingPtSessions = u.RemainingPtSessions,
+                    AssignedTrainerId = u.AssignedTrainerId,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt
+                })
+                .ToListAsync();
 
-            var allUsers = _context.Users.ToList();
-            var statsByRole = allUsers.GroupBy(u => u.Role)
-                .Select(g => new { role = g.Key, count = g.Count() })
-                .ToList();
-
-            var statsByPackage = allUsers.GroupBy(u => u.MembershipPackage)
-                .Select(g => new { package = g.Key, count = g.Count() })
-                .ToList();
-
-            return Ok(new
-            {
-                totalSystemUsers = allUsers.Count,
-                stats = new
-                {
-                    byRole = statsByRole,
-                    byMembershipPackage = statsByPackage
-                },
-                users = matchedUsers
-            });
+            return Ok(users);
         }
 
-        // GET api/users/{id}
+        // ------------------------------------------------------------------------
+        // READ BY ID (GET) - Lấy thông tin người dùng theo Id
+        // ------------------------------------------------------------------------
         [HttpGet("{id:int}")]
-        public ActionResult<UserResponseDto> GetById(int id)
+        public async Task<ActionResult<UserResponseDto>> GetById(int id)
         {
-            var user = _context.Users.Find(id);
-            if (user == null)
-                return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
+            var user = await _context.Users
+                .Where(u => u.Id == id)
+                .Select(u => new UserResponseDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    FullName = u.FullName,
+                    Phone = u.Phone,
+                    Role = u.Role,
+                    Gender = u.Gender,
+                    DateOfBirth = u.DateOfBirth,
+                    Address = u.Address,
+                    MembershipPackage = u.MembershipPackage,
+                    MembershipStatus = u.MembershipStatus,
+                    MembershipEndDate = u.MembershipEndDate,
+                    RemainingPtSessions = u.RemainingPtSessions,
+                    AssignedTrainerId = u.AssignedTrainerId,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt
+                })
+                .FirstOrDefaultAsync();
 
-            return Ok(new UserResponseDto
+            if (user == null)
             {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                FullName = user.FullName,
-                Phone = user.Phone,
-                Role = user.Role,
-                MembershipPackage = user.MembershipPackage,
-                MembershipStatus = user.MembershipStatus,
-                MembershipEndDate = user.MembershipEndDate,
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
-            });
+                return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
+            }
+
+            return Ok(user);
         }
 
-        // POST api/users/register
+        // ------------------------------------------------------------------------
+        // CREATE / REGISTER (POST) - Đăng ký hội viên / Thêm người dùng mới
+        // ------------------------------------------------------------------------
         [HttpPost("register")]
-        public ActionResult<UserResponseDto> Register([FromBody] UserRegisterDto request)
+        public async Task<ActionResult<UserResponseDto>> Register([FromBody] UserRegisterDto request)
         {
-            if (_context.Users.Any(u => u.Username == request.Username))
-                return BadRequest(new { message = $"Username '{request.Username}' đã tồn tại." });
-
-            if (_context.Users.Any(u => u.Email == request.Email))
-                return BadRequest(new { message = $"Email '{request.Email}' đã được đăng ký." });
-
-            // Generate Password Hash and Salt
-            byte[] passwordHash, passwordSalt;
-            using (var hmac = new HMACSHA512())
+            // Kiểm tra trùng lặp Username hoặc Email
+            bool isExist = await _context.Users.AnyAsync(u => u.Username == request.Username || u.Email == request.Email);
+            if (isExist)
             {
-                passwordSalt = hmac.Key;
-                // Nếu request.Password null thì lấy pass mặc định là 123456
-                string pwd = !string.IsNullOrEmpty(request.GetType().GetProperty("Password")?.GetValue(request)?.ToString()) 
-                             ? request.GetType().GetProperty("Password")?.GetValue(request)?.ToString() 
-                             : "123456";
-                passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(pwd!));
+                return BadRequest(new { message = "Username hoặc Email đã được sử dụng." });
             }
+
+            // Băm mật khẩu bảo mật bằng HMACSHA512
+            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
             var newUser = new User
             {
                 Username = request.Username,
                 Email = request.Email,
-                FullName = request.FullName,
-                Phone = request.Phone,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
-                Role = "Member",
-                MembershipPackage = request.MembershipPackage ?? "Basic",
+                FullName = request.FullName,
+                Phone = request.Phone,
+                Gender = string.IsNullOrEmpty(request.Gender) ? "Male" : request.Gender,
+                DateOfBirth = request.DateOfBirth,
+                Address = request.Address ?? string.Empty,
+                HeightCm = request.HeightCm,
+                WeightKg = request.WeightKg,
+                HealthNotes = request.HealthNotes,
+                FitnessGoal = request.FitnessGoal,
+                Role = string.IsNullOrEmpty(request.Role) ? "Member" : request.Role,
+                MembershipPackage = string.IsNullOrEmpty(request.MembershipPackage) ? "Basic" : request.MembershipPackage,
                 MembershipStatus = "Active",
+                MembershipStartDate = DateTime.UtcNow,
                 MembershipEndDate = DateTime.UtcNow.AddMonths(1),
+                RemainingPtSessions = 0,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                Gender = "Unknown",
-                Address = "N/A"
+                CreatedAt = DateTime.UtcNow
             };
 
-            _context.Users.Add(newUser);
-            _context.SaveChanges(); // LƯU VÀO DATABASE THẬT!
+            await _context.Users.AddAsync(newUser);
+            await _context.SaveChangesAsync();
 
-            var responseDto = new UserResponseDto
-            {
-                Id = newUser.Id,
-                Username = newUser.Username,
-                Email = newUser.Email,
-                FullName = newUser.FullName,
-                Phone = newUser.Phone,
-                Role = newUser.Role,
-                MembershipPackage = newUser.MembershipPackage,
-                MembershipStatus = newUser.MembershipStatus,
-                MembershipEndDate = newUser.MembershipEndDate,
-                IsActive = newUser.IsActive,
-                CreatedAt = newUser.CreatedAt
-            };
-
-            return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, responseDto);
+            var response = MapToDto(newUser);
+            return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
-        // POST api/users/login
-        [HttpPost("login")]
-        public ActionResult Login([FromBody] UserLoginDto request)
+        // ------------------------------------------------------------------------
+        // UPDATE (PUT) - Cập nhật thông tin người dùng (Có thể đổi mật khẩu)
+        // ------------------------------------------------------------------------
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UserUpdateDto request)
         {
-            string role = "";
-            string username = "";
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
 
-            // Kiểm tra nếu là tài khoản Admin chúa
+            if (user == null)
+            {
+                return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
+            }
+
+            // Cập nhật các trường thông tin nếu có gửi lên
+            if (!string.IsNullOrEmpty(request.Username)) user.Username = request.Username;
+            if (!string.IsNullOrEmpty(request.Email)) user.Email = request.Email;
+            if (!string.IsNullOrEmpty(request.FullName)) user.FullName = request.FullName;
+            if (!string.IsNullOrEmpty(request.Phone)) user.Phone = request.Phone;
+            if (!string.IsNullOrEmpty(request.Role)) user.Role = request.Role;
+            if (!string.IsNullOrEmpty(request.MembershipPackage)) user.MembershipPackage = request.MembershipPackage;
+            if (!string.IsNullOrEmpty(request.MembershipStatus)) user.MembershipStatus = request.MembershipStatus;
+            if (!string.IsNullOrEmpty(request.Gender)) user.Gender = request.Gender;
+            if (request.DateOfBirth.HasValue) user.DateOfBirth = request.DateOfBirth;
+            if (request.Address != null) user.Address = request.Address;
+            if (request.RemainingPtSessions.HasValue) user.RemainingPtSessions = request.RemainingPtSessions.Value;
+            if (request.AssignedTrainerId.HasValue) user.AssignedTrainerId = request.AssignedTrainerId.Value;
+            if (request.IsActive.HasValue) user.IsActive = request.IsActive.Value;
+
+            // Nếu có nhập mật khẩu mới thì băm lại mật khẩu
+            if (!string.IsNullOrEmpty(request.Password))
+            {
+                CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
+                user.PasswordHash = passwordHash;
+                user.PasswordSalt = passwordSalt;
+            }
+
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = $"Cập nhật thành công người dùng Id = {id}",
+                user = MapToDto(user)
+            });
+        }
+
+        // ------------------------------------------------------------------------
+        // DELETE (DELETE) - Xóa người dùng theo Id
+        // ------------------------------------------------------------------------
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+            {
+                return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
+            }
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Đã xóa người dùng '{user.Username}' (Id = {id}) thành công" });
+        }
+
+        // ------------------------------------------------------------------------
+        // AUTHENTICATION (POST) - Đăng nhập nhận JWT Token (Kiểm tra Hash thực tế)
+        // ------------------------------------------------------------------------
+        [HttpPost("login")]
+        public async Task<ActionResult> Login([FromBody] UserLoginDto request)
+        {
+            string role;
+            string username;
+
+            // Tài khoản admin hệ thống mặc định
             if (request.Username == _adminUsername && request.Password == _adminPassword)
             {
                 role = "Admin";
@@ -201,33 +255,45 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
             }
             else
             {
-                // Nếu không, tìm trong Database
-                var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
-                // Dùng pass ảo để pass (vì ta đang để PasswordHash = 0x01) cho tiện đồ án
-                if (user == null || request.Password != "password123") 
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+
+                // Kiểm tra tài khoản và mật khẩu đã băm trong database
+                if (user == null || !VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
                 {
                     return BadRequest(new { message = "Tên đăng nhập hoặc mật khẩu không chính xác." });
                 }
+
+                if (!user.IsActive)
+                {
+                    return BadRequest(new { message = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên." });
+                }
+
                 role = user.Role;
                 username = user.Username;
+
+                user.LastLoginAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
             }
 
-            // ===== TẠO JWT TOKEN CHỨA QUYỀN (ROLE) =====
-            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-            // Khóa bí mật phải giống với trong Program.cs
-            var key = Encoding.UTF8.GetBytes("MySuperSecretKeyForGymApp_1234567890!!!"); 
+            // Tạo JWT Token
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings["SecretKey"] ?? "MySuperSecretKeyForGymApp_1234567890!!!";
+            var key = Encoding.UTF8.GetBytes(secretKey);
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new System.Security.Claims.ClaimsIdentity(new[]
+                Subject = new ClaimsIdentity(new[]
                 {
-                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, username),
-                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role)
+                    new Claim(ClaimTypes.Name, username),
+                    new Claim(ClaimTypes.Role, role)
                 }),
-                Expires = DateTime.UtcNow.AddHours(2), // Token sống 2 tiếng
-                Issuer = "GymApp",
-                Audience = "GymAppClient",
+                Expires = DateTime.UtcNow.AddHours(2),
+                Issuer = jwtSettings["Issuer"] ?? "GymApp",
+                Audience = jwtSettings["Audience"] ?? "GymAppClient",
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
 
@@ -236,58 +302,76 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                 token = tokenString,
                 username = username,
                 role = role,
-                message = "Đăng nhập thành công! Hãy copy token này để mở khóa các chức năng."
+                message = "Đăng nhập thành công!"
             });
         }
 
-        // PUT api/users/{id}
-        [HttpPut("{id:int}")]
-        public ActionResult<UserResponseDto> Update(int id, [FromBody] UserUpdateDto request)
+        // ------------------------------------------------------------------------
+        // DASHBOARD STATS (GET) - Thống kê hội viên phòng Gym
+        // ------------------------------------------------------------------------
+        [HttpGet("stats")]
+        public async Task<ActionResult> GetStats()
         {
-            var user = _context.Users.Find(id);
-            if (user == null)
-                return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
+            var totalUsers = await _context.Users.CountAsync();
+            var byRole = await _context.Users
+                .GroupBy(u => u.Role)
+                .Select(g => new { role = g.Key, count = g.Count() })
+                .ToListAsync();
 
-            user.FullName = string.IsNullOrWhiteSpace(request.FullName) ? user.FullName : request.FullName;
-            user.Email = string.IsNullOrWhiteSpace(request.Email) ? user.Email : request.Email;
-            user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? user.Phone : request.Phone;
-            user.Role = string.IsNullOrWhiteSpace(request.Role) ? user.Role : request.Role;
-            user.MembershipPackage = string.IsNullOrWhiteSpace(request.MembershipPackage) ? user.MembershipPackage : request.MembershipPackage;
-            user.MembershipStatus = string.IsNullOrWhiteSpace(request.MembershipStatus) ? user.MembershipStatus : request.MembershipStatus;
-            user.IsActive = request.IsActive;
+            var byPackage = await _context.Users
+                .GroupBy(u => u.MembershipPackage)
+                .Select(g => new { package = g.Key, count = g.Count() })
+                .ToListAsync();
 
-            _context.SaveChanges(); // LƯU VÀO DB THẬT
-
-            return Ok(new UserResponseDto
+            return Ok(new
             {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                FullName = user.FullName,
-                Phone = user.Phone,
-                Role = user.Role,
-                MembershipPackage = user.MembershipPackage,
-                MembershipStatus = user.MembershipStatus,
-                MembershipEndDate = user.MembershipEndDate,
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
+                totalUsers,
+                statsByRole = byRole,
+                statsByMembershipPackage = byPackage
             });
         }
 
-        // DELETE api/users/{id}
-        // [QUAN TRỌNG] Đặt ổ khóa: CHỈ CÓ ADMIN MỚI ĐƯỢC PHÉP GỌI LỆNH XÓA!
-        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
-        [HttpDelete("{id:int}")]
-        public ActionResult Delete(int id)
+        // ========================================================================
+        // Helper Methods: Băm mật khẩu & Ánh xạ DTO
+        // ========================================================================
+        private static void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
-            var user = _context.Users.Find(id);
-            if (user == null)
-                return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
+            using var hmac = new HMACSHA512();
+            passwordSalt = hmac.Key;
+            passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+        }
 
-            _context.Users.Remove(user);
-            _context.SaveChanges(); // XÓA KHỎI DB THẬT
+        private static bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
+        {
+            if (passwordSalt == null || passwordSalt.Length == 0 || passwordHash == null || passwordHash.Length == 0)
+                return false;
 
-            return Ok(new { message = $"Đã xóa người dùng '{user.Username}' (Id = {id}) thành công từ Database." });
+            using var hmac = new HMACSHA512(passwordSalt);
+            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return computedHash.SequenceEqual(passwordHash);
+        }
+
+        private static UserResponseDto MapToDto(User u)
+        {
+            return new UserResponseDto
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Email = u.Email,
+                FullName = u.FullName,
+                Phone = u.Phone,
+                Role = u.Role,
+                Gender = u.Gender,
+                DateOfBirth = u.DateOfBirth,
+                Address = u.Address,
+                MembershipPackage = u.MembershipPackage,
+                MembershipStatus = u.MembershipStatus,
+                MembershipEndDate = u.MembershipEndDate,
+                RemainingPtSessions = u.RemainingPtSessions,
+                AssignedTrainerId = u.AssignedTrainerId,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt
+            };
         }
     }
 }

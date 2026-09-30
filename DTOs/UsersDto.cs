@@ -69,6 +69,9 @@ namespace QuanlyPhongtapGymFitnessClub.DTOs
         [MaxLength(30)]
         public string MembershipPackage { get; set; } = "Basic";
 
+        [MaxLength(20)]
+        public string? Role { get; set; } = "Member";
+
         // Liên hệ khẩn cấp
         [MaxLength(100)]
         public string EmergencyContactName { get; set; } = string.Empty;
@@ -82,30 +85,49 @@ namespace QuanlyPhongtapGymFitnessClub.DTOs
     }
 
     // ================= 2. DTO CẬP NHẬT THÔNG TIN HỘI VIÊN =================
-    // Dữ liệu Client gửi lên khi sửa thông tin (không có [Required] vì cho phép sửa từng trường)
+    // Dữ liệu Client gửi lên khi sửa thông tin (cho phép sửa từng trường hoặc đổi mật khẩu)
     public class UserUpdateDto
     {
+        [MaxLength(50, ErrorMessage = "Username tối đa 50 ký tự")]
+        public string? Username { get; set; }
+
         [MaxLength(100, ErrorMessage = "Họ tên tối đa 100 ký tự")]
-        public string FullName { get; set; } = string.Empty;
+        public string? FullName { get; set; }
 
         [EmailAddress(ErrorMessage = "Email không đúng định dạng")]
         [MaxLength(100, ErrorMessage = "Email tối đa 100 ký tự")]
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; }
 
         [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
         [MaxLength(15, ErrorMessage = "Số điện thoại tối đa 15 ký tự")]
-        public string Phone { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+
+        [MinLength(6, ErrorMessage = "Mật khẩu tối thiểu 6 ký tự nếu muốn đổi")]
+        [MaxLength(100, ErrorMessage = "Mật khẩu tối đa 100 ký tự")]
+        public string? Password { get; set; }
 
         [MaxLength(20)]
-        public string Role { get; set; } = "Member";
+        public string? Role { get; set; }
 
         [MaxLength(30)]
-        public string MembershipPackage { get; set; } = "Basic";
+        public string? MembershipPackage { get; set; }
 
         [MaxLength(20)]
-        public string MembershipStatus { get; set; } = "Active";
+        public string? MembershipStatus { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        [MaxLength(10)]
+        public string? Gender { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
+
+        [MaxLength(200)]
+        public string? Address { get; set; }
+
+        public int? RemainingPtSessions { get; set; }
+
+        public int? AssignedTrainerId { get; set; }
+
+        public bool? IsActive { get; set; }
     }
 
     // ================= 3. DTO ĐĂNG NHẬP =================
@@ -133,9 +155,15 @@ namespace QuanlyPhongtapGymFitnessClub.DTOs
         public string Phone { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
 
+        public string? Gender { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string? Address { get; set; }
+
         public string MembershipPackage { get; set; } = string.Empty;
         public string MembershipStatus { get; set; } = string.Empty;
         public DateTime? MembershipEndDate { get; set; }
+        public int RemainingPtSessions { get; set; }
+        public int? AssignedTrainerId { get; set; }
 
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
