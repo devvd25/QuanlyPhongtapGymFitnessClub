@@ -14,6 +14,11 @@ namespace QuanlyPhongtapGymFitnessClub.Data
 
         // Khai báo bảng Users trong SQL Server tương ứng với Model User
         public DbSet<User> Users { get; set; }
+        
+        // Khai báo thêm các bảng mới
+        public DbSet<Trainer> Trainers { get; set; }
+        public DbSet<Staff> Staffs { get; set; }
+        public DbSet<Product> Products { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

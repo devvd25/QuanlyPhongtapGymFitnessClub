@@ -1,82 +1,31 @@
-﻿using QuanlyPhongtapGymFitnessClub.DTOs;
+using QuanlyPhongtapGymFitnessClub.Data;
+using QuanlyPhongtapGymFitnessClub.DTOs;
 using QuanlyPhongtapGymFitnessClub.Models;
 
 namespace QuanlyPhongtapGymFitnessClub.Services
 {
-    /// <summary>
-    /// Service xá»­ lĂ½ nghiá»‡p vá»¥ cho NhĂ¢n viĂªn lá»… tĂ¢n phĂ²ng Gym (ÄÄƒng kĂ½ Scoped trong Program.cs)
-    /// </summary>
     public class StaffService : IStaffService
     {
-        private static readonly List<Staff> _staffs = new()
+        private readonly AppDbContext _context;
+
+        public StaffService(AppDbContext context)
         {
-            new Staff
-            {
-                Id = 1,
-                Username = "staff_linh",
-                FullName = "Tráº§n KhĂ¡nh Linh",
-                Email = "linh.tran@fitnessclub.vn",
-                Phone = "0918889900",
-                Gender = "Female",
-                DateOfBirth = new DateTime(2001, 5, 14),
-                WorkShift = "Morning",
-                CounterNumber = 1,
-                Department = "Reception",
-                HireDate = new DateTime(2025, 2, 1),
-                IsOnDuty = true,
-                IsActive = true,
-                CreatedAt = new DateTime(2025, 2, 1)
-            },
-            new Staff
-            {
-                Id = 2,
-                Username = "staff_minh",
-                FullName = "NgĂ´ Nháº­t Minh",
-                Email = "minh.ngo@fitnessclub.vn",
-                Phone = "0947778899",
-                Gender = "Male",
-                DateOfBirth = new DateTime(2000, 9, 30),
-                WorkShift = "Afternoon",
-                CounterNumber = 2,
-                Department = "Sales",
-                HireDate = new DateTime(2024, 10, 15),
-                IsOnDuty = false,
-                IsActive = true,
-                CreatedAt = new DateTime(2024, 10, 15)
-            },
-            new Staff
-            {
-                Id = 3,
-                Username = "staff_thao",
-                FullName = "Pháº¡m PhÆ°Æ¡ng Tháº£o",
-                Email = "thao.pham@fitnessclub.vn",
-                Phone = "0962223344",
-                Gender = "Female",
-                DateOfBirth = new DateTime(2002, 12, 5),
-                WorkShift = "Evening",
-                CounterNumber = 1,
-                Department = "Reception",
-                HireDate = new DateTime(2025, 4, 10),
-                IsOnDuty = true,
-                IsActive = true,
-                CreatedAt = new DateTime(2025, 4, 10)
-            }
-        };
+            _context = context;
+        }
 
         public List<StaffResponseDto> GetAll(string? search, string? workShift, bool? isOnDuty)
         {
-            var query = _staffs.AsEnumerable();
+            var query = _context.Staffs.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(s => s.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                      || s.Username.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                      || s.Department.Contains(search, StringComparison.OrdinalIgnoreCase));
+                var searchLower = search.ToLower();
+                query = query.Where(s => s.FullName.ToLower().Contains(searchLower) || s.Username.ToLower().Contains(searchLower) || s.Department.ToLower().Contains(searchLower));
             }
 
             if (!string.IsNullOrWhiteSpace(workShift))
             {
-                query = query.Where(s => s.WorkShift.Equals(workShift, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(s => s.WorkShift == workShift);
             }
 
             if (isOnDuty.HasValue)
@@ -84,20 +33,53 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 query = query.Where(s => s.IsOnDuty == isOnDuty.Value);
             }
 
-            return query.Select(MapToResponseDto).ToList();
+            return query.Select(s => new StaffResponseDto
+            {
+                Id = s.Id,
+                Username = s.Username,
+                FullName = s.FullName,
+                Email = s.Email,
+                Phone = s.Phone,
+                Gender = s.Gender,
+                DateOfBirth = s.DateOfBirth,
+                WorkShift = s.WorkShift,
+                CounterNumber = s.CounterNumber,
+                Department = s.Department,
+                HireDate = s.HireDate,
+                IsOnDuty = s.IsOnDuty,
+                IsActive = s.IsActive,
+                CreatedAt = s.CreatedAt
+            }).ToList();
         }
 
         public StaffResponseDto? GetById(int id)
         {
-            var staff = _staffs.FirstOrDefault(s => s.Id == id);
-            return staff == null ? null : MapToResponseDto(staff);
+            var staff = _context.Staffs.FirstOrDefault(s => s.Id == id);
+            if (staff == null) return null;
+
+            return new StaffResponseDto
+            {
+                Id = staff.Id,
+                Username = staff.Username,
+                FullName = staff.FullName,
+                Email = staff.Email,
+                Phone = staff.Phone,
+                Gender = staff.Gender,
+                DateOfBirth = staff.DateOfBirth,
+                WorkShift = staff.WorkShift,
+                CounterNumber = staff.CounterNumber,
+                Department = staff.Department,
+                HireDate = staff.HireDate,
+                IsOnDuty = staff.IsOnDuty,
+                IsActive = staff.IsActive,
+                CreatedAt = staff.CreatedAt
+            };
         }
 
         public StaffResponseDto Create(StaffCreateDto dto)
         {
             var newStaff = new Staff
             {
-                Id = _staffs.Any() ? _staffs.Max(s => s.Id) + 1 : 1,
                 Username = dto.Username,
                 FullName = dto.FullName,
                 Email = dto.Email,
@@ -106,20 +88,20 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 DateOfBirth = dto.DateOfBirth,
                 WorkShift = dto.WorkShift,
                 CounterNumber = dto.CounterNumber,
-                Department = dto.Department,
-                HireDate = DateTime.UtcNow,
-                IsOnDuty = true,
+                CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                IsOnDuty = false
             };
 
-            _staffs.Add(newStaff);
-            return MapToResponseDto(newStaff);
+            _context.Staffs.Add(newStaff);
+            _context.SaveChanges();
+
+            return GetById(newStaff.Id)!;
         }
 
         public StaffResponseDto? Update(int id, StaffUpdateDto dto)
         {
-            var staff = _staffs.FirstOrDefault(s => s.Id == id);
+            var staff = _context.Staffs.FirstOrDefault(s => s.Id == id);
             if (staff == null) return null;
 
             if (!string.IsNullOrWhiteSpace(dto.FullName)) staff.FullName = dto.FullName;
@@ -127,49 +109,32 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             if (!string.IsNullOrWhiteSpace(dto.Phone)) staff.Phone = dto.Phone;
             if (!string.IsNullOrWhiteSpace(dto.WorkShift)) staff.WorkShift = dto.WorkShift;
             if (dto.CounterNumber.HasValue) staff.CounterNumber = dto.CounterNumber.Value;
-            if (!string.IsNullOrWhiteSpace(dto.Department)) staff.Department = dto.Department;
-            if (dto.IsOnDuty.HasValue) staff.IsOnDuty = dto.IsOnDuty.Value;
-            if (dto.IsActive.HasValue) staff.IsActive = dto.IsActive.Value;
-            staff.UpdatedAt = DateTime.UtcNow;
 
-            return MapToResponseDto(staff);
+            staff.UpdatedAt = DateTime.UtcNow;
+            _context.SaveChanges();
+
+            return GetById(id);
         }
 
         public bool Delete(int id)
         {
-            var staff = _staffs.FirstOrDefault(s => s.Id == id);
+            var staff = _context.Staffs.FirstOrDefault(s => s.Id == id);
             if (staff == null) return false;
 
-            _staffs.Remove(staff);
+            _context.Staffs.Remove(staff);
+            _context.SaveChanges();
             return true;
         }
 
         public bool ToggleDutyStatus(int id)
         {
-            var staff = _staffs.FirstOrDefault(s => s.Id == id);
+            var staff = _context.Staffs.FirstOrDefault(s => s.Id == id);
             if (staff == null) return false;
 
             staff.IsOnDuty = !staff.IsOnDuty;
             staff.UpdatedAt = DateTime.UtcNow;
+            _context.SaveChanges();
             return true;
         }
-
-        private static StaffResponseDto MapToResponseDto(Staff s) => new()
-        {
-            Id = s.Id,
-            Username = s.Username,
-            FullName = s.FullName,
-            Email = s.Email,
-            Phone = s.Phone,
-            Gender = s.Gender,
-            DateOfBirth = s.DateOfBirth,
-            WorkShift = s.WorkShift,
-            CounterNumber = s.CounterNumber,
-            Department = s.Department,
-            HireDate = s.HireDate,
-            IsOnDuty = s.IsOnDuty,
-            IsActive = s.IsActive,
-            CreatedAt = s.CreatedAt
-        };
     }
 }

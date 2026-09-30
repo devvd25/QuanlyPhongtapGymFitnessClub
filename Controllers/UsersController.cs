@@ -1,5 +1,10 @@
 using QuanlyPhongtapGymFitnessClub.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using QuanlyPhongtapGymFitnessClub.Data;
+using QuanlyPhongtapGymFitnessClub.Models;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
@@ -7,150 +12,12 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
-        // Mock Data
-        private static List<UserResponseDto> _fakeUsers = new List<UserResponseDto>
+        private readonly AppDbContext _context;
+
+        public UsersController(AppDbContext context)
         {
-            new UserResponseDto
-            {
-                Id = 1,
-                Username = "nguyenvanan",
-                Email = "an.nguyen@gmail.com",
-                FullName = "Nguyễn Văn An",
-                Phone = "0901234567",
-                Role = "Member",
-                MembershipPackage = "VIP",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2027, 12, 31),
-                IsActive = true,
-                CreatedAt = new DateTime(2026, 1, 15)
-            },
-            new UserResponseDto
-            {
-                Id = 2,
-                Username = "tranvanbinh",
-                Email = "binh.tran@gmail.com",
-                FullName = "Trần Văn Bình",
-                Phone = "0912345678",
-                Role = "Member",
-                MembershipPackage = "Basic",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2027, 6, 30),
-                IsActive = true,
-                CreatedAt = new DateTime(2026, 3, 20)
-            },
-            new UserResponseDto
-            {
-                Id = 3,
-                Username = "lethicam",
-                Email = "cam.le@gmail.com",
-                FullName = "Lê Thị Cẩm",
-                Phone = "0923456789",
-                Role = "Trainer",
-                MembershipPackage = "Diamond",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2028, 1, 1),
-                IsActive = true,
-                CreatedAt = new DateTime(2025, 11, 5)
-            },
-            new UserResponseDto
-            {
-                Id = 4,
-                Username = "phamvandung",
-                Email = "dung.pham@gmail.com",
-                FullName = "Phạm Văn Dũng",
-                Phone = "0934567890",
-                Role = "Admin",
-                MembershipPackage = "Diamond",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2029, 1, 1),
-                IsActive = true,
-                CreatedAt = new DateTime(2025, 8, 10)
-            },
-            new UserResponseDto
-            {
-                Id = 5,
-                Username = "hoangthimai",
-                Email = "mai.hoang@gmail.com",
-                FullName = "Hoàng Thị Mai",
-                Phone = "0945678901",
-                Role = "Member",
-                MembershipPackage = "VIP",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2027, 8, 15),
-                IsActive = true,
-                CreatedAt = new DateTime(2026, 2, 14)
-            },
-            new UserResponseDto
-            {
-                Id = 6,
-                Username = "vovanphuc",
-                Email = "phuc.vo@gmail.com",
-                FullName = "Võ Văn Phúc",
-                Phone = "0956789012",
-                Role = "Member",
-                MembershipPackage = "Basic",
-                MembershipStatus = "Expired",
-                MembershipEndDate = new DateTime(2026, 1, 1),
-                IsActive = false,
-                CreatedAt = new DateTime(2025, 6, 1)
-            },
-            new UserResponseDto
-            {
-                Id = 7,
-                Username = "dangthigiang",
-                Email = "giang.dang@gmail.com",
-                FullName = "Đặng Thị Giang",
-                Phone = "0967890123",
-                Role = "Trainer",
-                MembershipPackage = "Diamond",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2028, 5, 20),
-                IsActive = true,
-                CreatedAt = new DateTime(2025, 10, 12)
-            },
-            new UserResponseDto
-            {
-                Id = 8,
-                Username = "buivanhuy",
-                Email = "huy.bui@gmail.com",
-                FullName = "Bùi Văn Huy",
-                Phone = "0978901234",
-                Role = "Member",
-                MembershipPackage = "VIP",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2027, 11, 30),
-                IsActive = true,
-                CreatedAt = new DateTime(2026, 4, 5)
-            },
-            new UserResponseDto
-            {
-                Id = 9,
-                Username = "ngothiyen",
-                Email = "yen.ngo@gmail.com",
-                FullName = "Ngô Thị Yến",
-                Phone = "0989012345",
-                Role = "Member",
-                MembershipPackage = "Basic",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2027, 4, 25),
-                IsActive = true,
-                CreatedAt = new DateTime(2026, 5, 18)
-            },
-            new UserResponseDto
-            {
-                Id = 10,
-                Username = "dinhvankhoa",
-                Email = "khoa.dinh@gmail.com",
-                FullName = "Đinh Văn Vũ",
-                Phone = "0990123456",
-                Role = "Member",
-                MembershipPackage = "Diamond",
-                MembershipStatus = "Active",
-                MembershipEndDate = new DateTime(2028, 2, 28),
-                IsActive = true,
-                CreatedAt = new DateTime(2026, 6, 10)
-            }
-        };
+            _context = context;
+        }
 
         private static readonly string _adminUsername = "admin";
         private static readonly string _adminPassword = "123456";
@@ -159,39 +26,45 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         [HttpGet]
         public ActionResult GetAll(
             [FromQuery] string? search,
-            [FromQuery] UserRole? role,
-            [FromQuery] MembershipPackageType? package)
+            [FromQuery] string? role,
+            [FromQuery] string? package)
         {
-            var query = _fakeUsers.AsEnumerable();
+            var query = _context.Users.AsQueryable();
             bool hasFilter = false;
 
-            // 1. Lọc theo từ khóa tìm kiếm (Tên hoặc Username)
             if (!string.IsNullOrWhiteSpace(search))
             {
                 hasFilter = true;
-                query = query.Where(u => u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                      || u.Username.Contains(search, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(u => u.FullName.Contains(search) || u.Username.Contains(search));
             }
 
-            // 2. Lọc theo Role (Admin, Member, Trainer...)
-            if (role.HasValue)
+            if (!string.IsNullOrWhiteSpace(role))
             {
                 hasFilter = true;
-                string roleStr = role.Value.ToString();
-                query = query.Where(u => u.Role.Equals(roleStr, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(u => u.Role == role);
             }
 
-            // 3. Lọc theo Gói tập Gym (Basic, VIP, Diamond...)
-            if (package.HasValue)
+            if (!string.IsNullOrWhiteSpace(package))
             {
                 hasFilter = true;
-                string packageStr = package.Value.ToString();
-                query = query.Where(u => u.MembershipPackage.Equals(packageStr, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(u => u.MembershipPackage == package);
             }
 
-            var matchedUsers = query.ToList();
+            var matchedUsers = query.Select(u => new UserResponseDto
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Email = u.Email,
+                FullName = u.FullName,
+                Phone = u.Phone,
+                Role = u.Role,
+                MembershipPackage = u.MembershipPackage,
+                MembershipStatus = u.MembershipStatus,
+                MembershipEndDate = u.MembershipEndDate,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt
+            }).ToList();
 
-            // Khi có sử dụng bất kỳ bộ lọc nào -> Chỉ trả về kết quả lọc (không hiện stats)
             if (hasFilter)
             {
                 return Ok(new
@@ -199,34 +72,32 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                     filters = new
                     {
                         search,
-                        role = role?.ToString(),
-                        package = package?.ToString()
+                        role,
+                        package
                     },
                     totalFound = matchedUsers.Count,
                     users = matchedUsers
                 });
             }
 
-            // Khi không lọc (lấy tất cả) -> Trả về toàn bộ danh sách kèm thống kê
-            var statsByRole = _fakeUsers
-                .GroupBy(u => u.Role)
+            var allUsers = _context.Users.ToList();
+            var statsByRole = allUsers.GroupBy(u => u.Role)
                 .Select(g => new { role = g.Key, count = g.Count() })
                 .ToList();
 
-            var statsByPackage = _fakeUsers
-                .GroupBy(u => u.MembershipPackage)
+            var statsByPackage = allUsers.GroupBy(u => u.MembershipPackage)
                 .Select(g => new { package = g.Key, count = g.Count() })
                 .ToList();
 
             return Ok(new
             {
-                totalSystemUsers = _fakeUsers.Count,
+                totalSystemUsers = allUsers.Count,
                 stats = new
                 {
                     byRole = statsByRole,
                     byMembershipPackage = statsByPackage
                 },
-                users = _fakeUsers
+                users = matchedUsers
             });
         }
 
@@ -234,80 +105,146 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         [HttpGet("{id:int}")]
         public ActionResult<UserResponseDto> GetById(int id)
         {
-            var user = _fakeUsers.FirstOrDefault(u => u.Id == id);
+            var user = _context.Users.Find(id);
             if (user == null)
                 return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
 
-            return Ok(user);
+            return Ok(new UserResponseDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Phone = user.Phone,
+                Role = user.Role,
+                MembershipPackage = user.MembershipPackage,
+                MembershipStatus = user.MembershipStatus,
+                MembershipEndDate = user.MembershipEndDate,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            });
         }
 
         // POST api/users/register
         [HttpPost("register")]
         public ActionResult<UserResponseDto> Register([FromBody] UserRegisterDto request)
         {
-            if (_fakeUsers.Any(u => u.Username == request.Username))
+            if (_context.Users.Any(u => u.Username == request.Username))
                 return BadRequest(new { message = $"Username '{request.Username}' đã tồn tại." });
 
-            if (_fakeUsers.Any(u => u.Email == request.Email))
+            if (_context.Users.Any(u => u.Email == request.Email))
                 return BadRequest(new { message = $"Email '{request.Email}' đã được đăng ký." });
 
-            var newUser = new UserResponseDto
+            // Generate Password Hash and Salt
+            byte[] passwordHash, passwordSalt;
+            using (var hmac = new HMACSHA512())
             {
-                Id = _fakeUsers.Max(u => u.Id) + 1,
+                passwordSalt = hmac.Key;
+                // Nếu request.Password null thì lấy pass mặc định là 123456
+                string pwd = !string.IsNullOrEmpty(request.GetType().GetProperty("Password")?.GetValue(request)?.ToString()) 
+                             ? request.GetType().GetProperty("Password")?.GetValue(request)?.ToString() 
+                             : "123456";
+                passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(pwd!));
+            }
+
+            var newUser = new User
+            {
                 Username = request.Username,
                 Email = request.Email,
                 FullName = request.FullName,
                 Phone = request.Phone,
+                PasswordHash = passwordHash,
+                PasswordSalt = passwordSalt,
                 Role = "Member",
-                MembershipPackage = request.MembershipPackage,
+                MembershipPackage = request.MembershipPackage ?? "Basic",
                 MembershipStatus = "Active",
                 MembershipEndDate = DateTime.UtcNow.AddMonths(1),
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Gender = "Unknown",
+                Address = "N/A"
             };
 
-            _fakeUsers.Add(newUser);
+            _context.Users.Add(newUser);
+            _context.SaveChanges(); // LƯU VÀO DATABASE THẬT!
 
-            // 201 Created + trả về URL của resource vừa tạo
-            return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, newUser);
+            var responseDto = new UserResponseDto
+            {
+                Id = newUser.Id,
+                Username = newUser.Username,
+                Email = newUser.Email,
+                FullName = newUser.FullName,
+                Phone = newUser.Phone,
+                Role = newUser.Role,
+                MembershipPackage = newUser.MembershipPackage,
+                MembershipStatus = newUser.MembershipStatus,
+                MembershipEndDate = newUser.MembershipEndDate,
+                IsActive = newUser.IsActive,
+                CreatedAt = newUser.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, responseDto);
         }
 
         // POST api/users/login
         [HttpPost("login")]
         public ActionResult Login([FromBody] UserLoginDto request)
         {
+            string role = "";
+            string username = "";
+
+            // Kiểm tra nếu là tài khoản Admin chúa
             if (request.Username == _adminUsername && request.Password == _adminPassword)
             {
-                return Ok(new
-                {
-                    token = "fake-jwt-token-xyz-123",
-                    username = request.Username,
-                    role = "Admin",
-                    message = "Đăng nhập thành công!"
-                });
+                role = "Admin";
+                username = _adminUsername;
             }
-
-            // Kiểm tra trong list user, password mặc định = "123456"
-            var user = _fakeUsers.FirstOrDefault(u => u.Username == request.Username);
-            if (user != null && request.Password == "123456")
+            else
             {
-                return Ok(new
+                // Nếu không, tìm trong Database
+                var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
+                // Dùng pass ảo để pass (vì ta đang để PasswordHash = 0x01) cho tiện đồ án
+                if (user == null || request.Password != "password123") 
                 {
-                    token = $"fake-jwt-token-{user.Username}-{user.Id}",
-                    username = user.Username,
-                    role = user.Role,
-                    message = "Đăng nhập thành công!"
-                });
+                    return BadRequest(new { message = "Tên đăng nhập hoặc mật khẩu không chính xác." });
+                }
+                role = user.Role;
+                username = user.Username;
             }
 
-            return BadRequest(new { message = "Tên đăng nhập hoặc mật khẩu không chính xác." });
+            // ===== TẠO JWT TOKEN CHỨA QUYỀN (ROLE) =====
+            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            // Khóa bí mật phải giống với trong Program.cs
+            var key = Encoding.UTF8.GetBytes("MySuperSecretKeyForGymApp_1234567890!!!"); 
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new System.Security.Claims.ClaimsIdentity(new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, username),
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role)
+                }),
+                Expires = DateTime.UtcNow.AddHours(2), // Token sống 2 tiếng
+                Issuer = "GymApp",
+                Audience = "GymAppClient",
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return Ok(new
+            {
+                token = tokenString,
+                username = username,
+                role = role,
+                message = "Đăng nhập thành công! Hãy copy token này để mở khóa các chức năng."
+            });
         }
 
         // PUT api/users/{id}
         [HttpPut("{id:int}")]
         public ActionResult<UserResponseDto> Update(int id, [FromBody] UserUpdateDto request)
         {
-            var user = _fakeUsers.FirstOrDefault(u => u.Id == id);
+            var user = _context.Users.Find(id);
             if (user == null)
                 return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
 
@@ -319,20 +256,38 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
             user.MembershipStatus = string.IsNullOrWhiteSpace(request.MembershipStatus) ? user.MembershipStatus : request.MembershipStatus;
             user.IsActive = request.IsActive;
 
-            return Ok(user);
+            _context.SaveChanges(); // LƯU VÀO DB THẬT
+
+            return Ok(new UserResponseDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Phone = user.Phone,
+                Role = user.Role,
+                MembershipPackage = user.MembershipPackage,
+                MembershipStatus = user.MembershipStatus,
+                MembershipEndDate = user.MembershipEndDate,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            });
         }
 
         // DELETE api/users/{id}
+        // [QUAN TRỌNG] Đặt ổ khóa: CHỈ CÓ ADMIN MỚI ĐƯỢC PHÉP GỌI LỆNH XÓA!
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            var user = _fakeUsers.FirstOrDefault(u => u.Id == id);
+            var user = _context.Users.Find(id);
             if (user == null)
                 return NotFound(new { message = $"Không tìm thấy người dùng có Id = {id}" });
 
-            _fakeUsers.Remove(user);
+            _context.Users.Remove(user);
+            _context.SaveChanges(); // XÓA KHỎI DB THẬT
 
-            return Ok(new { message = $"Đã xóa người dùng '{user.Username}' (Id = {id}) thành công." });
+            return Ok(new { message = $"Đã xóa người dùng '{user.Username}' (Id = {id}) thành công từ Database." });
         }
     }
 }
