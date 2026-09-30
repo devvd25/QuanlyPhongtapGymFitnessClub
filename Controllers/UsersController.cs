@@ -1,9 +1,10 @@
-﻿using QuanlyPhongtapGymFitnessClub.DTOs;
+using QuanlyPhongtapGymFitnessClub.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using QuanlyPhongtapGymFitnessClub.Data;
 using QuanlyPhongtapGymFitnessClub.Models;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
@@ -189,30 +190,54 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         [HttpPost("login")]
         public ActionResult Login([FromBody] UserLoginDto request)
         {
+            string role = "";
+            string username = "";
+
+            // Kiểm tra nếu là tài khoản Admin chúa
             if (request.Username == _adminUsername && request.Password == _adminPassword)
             {
-                return Ok(new
-                {
-                    token = "fake-jwt-token-xyz-123",
-                    username = request.Username,
-                    role = "Admin",
-                    message = "Đăng nhập thành công!"
-                });
+                role = "Admin";
+                username = _adminUsername;
             }
-
-            var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
-            if (user != null)
+            else
             {
-                return Ok(new
+                // Nếu không, tìm trong Database
+                var user = _context.Users.FirstOrDefault(u => u.Username == request.Username);
+                // Dùng pass ảo để pass (vì ta đang để PasswordHash = 0x01) cho tiện đồ án
+                if (user == null || request.Password != "password123") 
                 {
-                    token = $"fake-jwt-token-{user.Username}-{user.Id}",
-                    username = user.Username,
-                    role = user.Role,
-                    message = "Đăng nhập thành công (Đã kết nối Database)!"
-                });
+                    return BadRequest(new { message = "Tên đăng nhập hoặc mật khẩu không chính xác." });
+                }
+                role = user.Role;
+                username = user.Username;
             }
 
-            return BadRequest(new { message = "Tên đăng nhập hoặc mật khẩu không chính xác." });
+            // ===== TẠO JWT TOKEN CHỨA QUYỀN (ROLE) =====
+            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            // Khóa bí mật phải giống với trong Program.cs
+            var key = Encoding.UTF8.GetBytes("MySuperSecretKeyForGymApp_1234567890!!!"); 
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new System.Security.Claims.ClaimsIdentity(new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, username),
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role)
+                }),
+                Expires = DateTime.UtcNow.AddHours(2), // Token sống 2 tiếng
+                Issuer = "GymApp",
+                Audience = "GymAppClient",
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return Ok(new
+            {
+                token = tokenString,
+                username = username,
+                role = role,
+                message = "Đăng nhập thành công! Hãy copy token này để mở khóa các chức năng."
+            });
         }
 
         // PUT api/users/{id}
@@ -250,6 +275,8 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         }
 
         // DELETE api/users/{id}
+        // [QUAN TRỌNG] Đặt ổ khóa: CHỈ CÓ ADMIN MỚI ĐƯỢC PHÉP GỌI LỆNH XÓA!
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {

@@ -1,24 +1,48 @@
 using Microsoft.EntityFrameworkCore;
 using QuanlyPhongtapGymFitnessClub.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ================= 1. Cáº¤U HĂŒNH DATABASE & DEPENDENCY INJECTION =================
-// 1. Äá»c chuá»—i káº¿t ná»‘i tá»« appsettings.json
+// ================= 1. CẤU HÌNH DATABASE & DEPENDENCY INJECTION =================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// 2. ÄÄƒng kĂ½ AppDbContext vĂ o há»‡ thá»‘ng Dependency Injection
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ================= 2. ÄÄ‚NG KĂ CĂC Dá»CH Vá»¤ KHĂC =================
+// ================= CẤU HÌNH JWT AUTHENTICATION =================
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? "MySuperSecretKeyForGymApp_1234567890!!!";
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"] ?? "GymApp",
+        ValidAudience = jwtSettings["Audience"] ?? "GymAppClient",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+    };
+});
+
+// ================= 2. ĐĂNG KÝ CÁC DỊCH VỤ KHÁC =================
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -29,11 +53,11 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
-// ================= ÄÄ‚NG KĂ DEPENDENCY INJECTION (BUá»”I 2) =================
+// ================= ĐĂNG KÝ DEPENDENCY INJECTION (BUỔI 2) =================
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.ITrainerService, QuanlyPhongtapGymFitnessClub.Services.TrainerService>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.IStaffService, QuanlyPhongtapGymFitnessClub.Services.StaffService>();
 
-// Cáº¥u hĂ¬nh CORS
+// Cấu hình CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -46,11 +70,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ================= Cáº¤U HĂŒNH MIDDLEWARE PIPELINE (BUá»”I 2) =================
-// 1. Request Logging Middleware (BĂ i táº­p Buá»•i 2: [LOG] Request: {Method} {Path})
+// ================= CẤU HÌNH MIDDLEWARE PIPELINE =================
 app.UseMiddleware<QuanlyPhongtapGymFitnessClub.Middleware.RequestLoggingMiddleware>();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -58,12 +80,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-
 app.UseHttpsRedirection();
 
+// Bắt buộc khai báo Authentication (Kiểm tra vé) TRƯỚC Authorization (Kiểm tra quyền)
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();
-
