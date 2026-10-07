@@ -22,6 +22,100 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Invoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InvoiceCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("StaffId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceCode")
+                        .IsUnique();
+
+                    b.HasIndex("StaffId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.InvoiceItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("InvoiceItems");
+                });
+
             modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -55,6 +149,7 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("StockQuantity")
@@ -161,9 +256,6 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("ExperienceYears")
-                        .HasColumnType("int");
-
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -175,6 +267,7 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                         .HasColumnType("nvarchar(10)");
 
                     b.Property<decimal>("HourlyRate")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsActive")
@@ -313,11 +406,6 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                     b.Property<int>("RemainingPtSessions")
                         .HasColumnType("int");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -342,13 +430,56 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Invoice", b =>
+                {
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Staff", "Staff")
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Staff");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.InvoiceItem", b =>
+                {
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Invoice", "Invoice")
+                        .WithMany("Items")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.User", b =>
                 {
                     b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Trainer", "AssignedTrainer")
                         .WithMany("AssignedMembers")
-                        .HasForeignKey("AssignedTrainerId");
+                        .HasForeignKey("AssignedTrainerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("AssignedTrainer");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Invoice", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Trainer", b =>

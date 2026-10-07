@@ -1,4 +1,4 @@
-using QuanlyPhongtapGymFitnessClub.Data;
+﻿using QuanlyPhongtapGymFitnessClub.Data;
 using QuanlyPhongtapGymFitnessClub.DTOs;
 using QuanlyPhongtapGymFitnessClub.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +15,7 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             _context = context;
         }
 
-        public List<TrainerResponseDto> GetAll(string? search, string? specialty, int? minExperienceYears)
+        public List<TrainerResponseDto> GetAll(string? search, string? specialty)
         {
             var query = _context.Trainers.Include(t => t.AssignedMembers).AsQueryable();
 
@@ -30,11 +30,6 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 query = query.Where(t => t.Specialty == specialty);
             }
 
-            if (minExperienceYears.HasValue)
-            {
-                query = query.Where(t => t.ExperienceYears >= minExperienceYears.Value);
-            }
-
             return query.ToList().Select(t => new TrainerResponseDto
             {
                 Id = t.Id,
@@ -45,7 +40,6 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 Gender = t.Gender,
                 DateOfBirth = t.DateOfBirth,
                 Specialty = t.Specialty,
-                ExperienceYears = t.ExperienceYears,
                 Certifications = t.Certifications,
                 Rating = t.Rating,
                 HourlyRate = t.HourlyRate,
@@ -72,7 +66,6 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 Gender = t.Gender,
                 DateOfBirth = t.DateOfBirth,
                 Specialty = t.Specialty,
-                ExperienceYears = t.ExperienceYears,
                 Certifications = t.Certifications,
                 Rating = t.Rating,
                 HourlyRate = t.HourlyRate,
@@ -95,7 +88,6 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 Gender = dto.Gender,
                 DateOfBirth = dto.DateOfBirth,
                 Specialty = dto.Specialty,
-                ExperienceYears = dto.ExperienceYears,
                 Certifications = dto.Certifications,
                 HourlyRate = dto.HourlyRate,
                 MaxMembers = dto.MaxMembers,
@@ -118,7 +110,6 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             if (!string.IsNullOrWhiteSpace(dto.Email)) trainer.Email = dto.Email;
             if (!string.IsNullOrWhiteSpace(dto.Phone)) trainer.Phone = dto.Phone;
             if (!string.IsNullOrWhiteSpace(dto.Specialty)) trainer.Specialty = dto.Specialty;
-            if (dto.ExperienceYears.HasValue) trainer.ExperienceYears = dto.ExperienceYears.Value;
 
             trainer.UpdatedAt = DateTime.UtcNow;
             _context.SaveChanges();
@@ -150,7 +141,6 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 FullName = u.FullName,
                 Email = u.Email,
                 Phone = u.Phone,
-                Role = u.Role,
                 MembershipPackage = u.MembershipPackage,
                 IsActive = u.IsActive
             }).ToList();
@@ -176,3 +166,4 @@ namespace QuanlyPhongtapGymFitnessClub.Services
         }
     }
 }
+

@@ -1,4 +1,4 @@
-using QuanlyPhongtapGymFitnessClub.Data;
+﻿using QuanlyPhongtapGymFitnessClub.Data;
 using QuanlyPhongtapGymFitnessClub.DTOs;
 using QuanlyPhongtapGymFitnessClub.Models;
 
@@ -20,7 +20,9 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var searchLower = search.ToLower();
-                query = query.Where(s => s.FullName.ToLower().Contains(searchLower) || s.Username.ToLower().Contains(searchLower) || s.Department.ToLower().Contains(searchLower));
+                query = query.Where(s => s.FullName.ToLower().Contains(searchLower)
+                                      || s.Username.ToLower().Contains(searchLower)
+                                      || s.Department.ToLower().Contains(searchLower));
             }
 
             if (!string.IsNullOrWhiteSpace(workShift))
@@ -88,6 +90,8 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                 DateOfBirth = dto.DateOfBirth,
                 WorkShift = dto.WorkShift,
                 CounterNumber = dto.CounterNumber,
+                Department = dto.Department,    // FIX: map Department từ DTO (trước đây bị bỏ sót)
+                HireDate = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
                 IsOnDuty = false
@@ -109,6 +113,9 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             if (!string.IsNullOrWhiteSpace(dto.Phone)) staff.Phone = dto.Phone;
             if (!string.IsNullOrWhiteSpace(dto.WorkShift)) staff.WorkShift = dto.WorkShift;
             if (dto.CounterNumber.HasValue) staff.CounterNumber = dto.CounterNumber.Value;
+            if (!string.IsNullOrWhiteSpace(dto.Department)) staff.Department = dto.Department;
+            if (dto.IsOnDuty.HasValue) staff.IsOnDuty = dto.IsOnDuty.Value;
+            if (dto.IsActive.HasValue) staff.IsActive = dto.IsActive.Value;
 
             staff.UpdatedAt = DateTime.UtcNow;
             _context.SaveChanges();
