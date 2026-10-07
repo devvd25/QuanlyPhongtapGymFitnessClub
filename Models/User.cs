@@ -91,9 +91,15 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         [ForeignKey("AssignedTrainerId")]
         public virtual Trainer? AssignedTrainer { get; set; }
 
-        // ================= 5. QUáº¢N LĂ TRáº NG THĂI & AUDIT LOGS =================
-        public bool IsActive { get; set; } = true; // true = hoáº¡t Ä‘á»™ng, false = khĂ³a tĂ i khoáº£n
-        public bool IsDeleted { get; set; } = false; // XĂ³a má»m (Soft Delete)
+        // Nhan vien dang ky tai khoan cho Hoi vien (Bai 6)
+        public int? RegisteredByStaffId { get; set; }
+
+        [ForeignKey("RegisteredByStaffId")]
+        public virtual Staff? RegisteredByStaff { get; set; }
+
+        // ================= 5. QUAN LY TRANG THAI & AUDIT LOGS =================
+        public bool IsActive { get; set; } = true;
+        public bool IsDeleted { get; set; } = false;
 
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

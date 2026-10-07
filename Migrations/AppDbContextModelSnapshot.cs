@@ -143,6 +143,9 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("ManagedByStaffId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -159,6 +162,8 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ManagedByStaffId");
 
                     b.ToTable("Products");
                 });
@@ -403,6 +408,9 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("RegisteredByStaffId")
+                        .HasColumnType("int");
+
                     b.Property<int>("RemainingPtSessions")
                         .HasColumnType("int");
 
@@ -423,6 +431,8 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("RegisteredByStaffId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -465,6 +475,13 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                     b.Navigation("Invoice");
 
                     b.Navigation("Product");
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Product", b =>
+                {
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Staff", "ManagedByStaff")
+                        .WithMany("ManagedProducts")
+                        .HasForeignKey("ManagedByStaffId");
+
+                    b.Navigation("ManagedByStaff");
                 });
 
             modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.User", b =>
@@ -474,7 +491,20 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                         .HasForeignKey("AssignedTrainerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Staff", "RegisteredByStaff")
+                        .WithMany("RegisteredUsers")
+                        .HasForeignKey("RegisteredByStaffId");
+
                     b.Navigation("AssignedTrainer");
+
+                    b.Navigation("RegisteredByStaff");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Staff", b =>
+                {
+                    b.Navigation("ManagedProducts");
+
+                    b.Navigation("RegisteredUsers");
                 });
 
             modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Invoice", b =>
