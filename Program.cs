@@ -82,6 +82,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // ================= DANG KY DEPENDENCY INJECTION (3-TIER REPOSITORY & SERVICE) =================
+builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Repositories.IAuthRepository, QuanlyPhongtapGymFitnessClub.Repositories.AuthRepository>();
+builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.IAuthService, QuanlyPhongtapGymFitnessClub.Services.AuthService>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Repositories.IUserRepository, QuanlyPhongtapGymFitnessClub.Repositories.UserRepository>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.IUserService, QuanlyPhongtapGymFitnessClub.Services.UserService>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.ITrainerService, QuanlyPhongtapGymFitnessClub.Services.TrainerService>();
@@ -152,3 +154,4 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.Run();
+

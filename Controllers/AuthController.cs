@@ -6,17 +6,17 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
     /// <summary>
     /// API Xac thuc nguoi dung (Login)
-    /// Ap dung mo hinh 3 lop: Goi thong qua IUserService
+    /// Ap dung mo hinh 3 lop: Controller -> IAuthService -> IAuthRepository
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
-        public AuthController(IUserService userService)
+        public AuthController(IAuthService authService)
         {
-            _userService = userService;
+            _authService = authService;
         }
 
         // ------------------------------------------------------------------------
@@ -25,21 +25,19 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto request)
         {
-            var result = await _userService.LoginAsync(request);
-            if (!result.IsSuccess)
+            var token = await _authService.LoginAsync(request);
+            if (token == null)
             {
-                return BadRequest(new { message = result.Message });
+                return BadRequest(new { message = "Ten dang nhap hoac mat khau khong chinh xac." });
             }
 
             return Ok(new
             {
-                token     = result.Token,
-                username  = result.Username,
-                role      = result.Role,
+                token     = token,
+                username  = request.Username,
                 expiresAt = DateTime.UtcNow.AddMinutes(60),
-                message   = result.Message
+                message   = "Dang nhap thanh cong!"
             });
         }
     }
 }
-
