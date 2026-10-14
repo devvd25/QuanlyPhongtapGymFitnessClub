@@ -13,7 +13,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ================= CAU HINH JWT AUTHENTICATION (THEO CHUAN CUA THAY) =================
+// ================= CAU HINH JWT AUTHENTICATION =================
 // 1. Doc thong tin JwtSettings tu appsettings.json
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"] ?? "Scretkey123456789123456789123456789123456789";
