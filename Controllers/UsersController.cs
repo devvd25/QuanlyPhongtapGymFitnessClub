@@ -14,11 +14,13 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
-        // Inject IUserService thay vi truc tiep AppDbContext
-        public UsersController(IUserService userService)
+        // Inject IUserService thay vi AppDbContext
+        public UsersController(IUserService userService, IAuthService authService)
         {
             _userService = userService;
+            _authService = authService;
         }
 
         // GET api/users
@@ -57,23 +59,18 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
         }
 
-        // POST api/users/login
+        // POST api/users/login (Su dung IAuthService theo dung code cua Thay)
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] UserLoginDto request)
+        public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
         {
-            var result = await _userService.LoginAsync(request);
-            if (!result.IsSuccess)
+            var token = await _authService.LoginAsync(dto);
+
+            if (token == null)
             {
-                return BadRequest(new { message = result.Message });
+                return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không chính xác." });
             }
 
-            return Ok(new
-            {
-                token    = result.Token,
-                username = result.Username,
-                role     = result.Role,
-                message  = result.Message
-            });
+            return Ok(new { Token = token });
         }
 
         // PUT api/users/{id}
