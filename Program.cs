@@ -13,10 +13,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ================= CAU HINH JWT AUTHENTICATION =================
+// ================= CAU HINH JWT AUTHENTICATION (THEO CHUAN CUA THAY) =================
+// 1. Doc thong tin JwtSettings tu appsettings.json
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"] ?? "Scretkey123456789123456789123456789123456789";
 
+// 2. Cau hinh dich vu Authentication voi JwtBearer
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -32,7 +34,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings["Issuer"] ?? "https://localhost:7003",
         ValidAudience = jwtSettings["Audience"] ?? "https://localhost:7003",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(secretKey))
     };
 });
 
@@ -79,7 +81,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ================= DANG KY DEPENDENCY INJECTION (BUOI 2 & 3-TIER REPOSITORY) =================
+// ================= DANG KY DEPENDENCY INJECTION (3-TIER REPOSITORY & SERVICE) =================
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Repositories.IUserRepository, QuanlyPhongtapGymFitnessClub.Repositories.UserRepository>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.IUserService, QuanlyPhongtapGymFitnessClub.Services.UserService>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.ITrainerService, QuanlyPhongtapGymFitnessClub.Services.TrainerService>();
@@ -101,7 +103,7 @@ var app = builder.Build();
 // ================= CAU HINH MIDDLEWARE PIPELINE =================
 app.UseMiddleware<QuanlyPhongtapGymFitnessClub.Middleware.RequestLoggingMiddleware>();
 
-// Luon bat Swagger (ke ca Production hay Development) de test do an va cham bai tien loi
+// Luon bat Swagger de test do an va cham bai tien loi
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -138,7 +140,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     }
     else
     {
-        Console.WriteLine("  >> Truy cap Swagger UI tai: http://localhost:5000/swagger");
+        Console.WriteLine("  >> Truy cap Swagger UI tai: http://localhost:5089/swagger");
     }
     Console.ForegroundColor = ConsoleColor.Yellow;
     Console.WriteLine("  [Tai khoan Admin]:  admin      | Mat khau: Admin@123");
@@ -150,10 +152,3 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.Run();
-
-
-
-
-
-
-
