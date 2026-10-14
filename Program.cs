@@ -15,7 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // ================= CAU HINH JWT AUTHENTICATION =================
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"] ?? "MySuperSecretKeyForGymApp_1234567890!!!";
+var secretKey = jwtSettings["SecretKey"] ?? "Scretkey123456789123456789123456789123456789";
 
 builder.Services.AddAuthentication(options =>
 {
@@ -30,8 +30,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"] ?? "GymApp",
-        ValidAudience = jwtSettings["Audience"] ?? "GymAppClient",
+        ValidIssuer = jwtSettings["Issuer"] ?? "https://localhost:7003",
+        ValidAudience = jwtSettings["Audience"] ?? "https://localhost:7003",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
     };
 });
@@ -150,6 +150,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.Run();
+
 
 
 

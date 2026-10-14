@@ -115,8 +115,9 @@ namespace QuanlyPhongtapGymFitnessClub.Services
 
             var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
             var jwtSettings  = _config.GetSection("JwtSettings");
-            var secretKey    = jwtSettings["SecretKey"] ?? "MySuperSecretKeyForGymApp_1234567890!!!";
+            var secretKey    = jwtSettings["SecretKey"] ?? "Scretkey123456789123456789123456789123456789";
             var key          = Encoding.UTF8.GetBytes(secretKey);
+            var expiryMinutes = int.TryParse(jwtSettings["ExpiryMinutes"], out int exp) ? exp : 60;
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -125,9 +126,9 @@ namespace QuanlyPhongtapGymFitnessClub.Services
                     new Claim(ClaimTypes.Name, username),
                     new Claim(ClaimTypes.Role, role)
                 }),
-                Expires            = DateTime.UtcNow.AddHours(2),
-                Issuer             = jwtSettings["Issuer"] ?? "GymApp",
-                Audience           = jwtSettings["Audience"] ?? "GymAppClient",
+                Expires            = DateTime.UtcNow.AddMinutes(expiryMinutes),
+                Issuer             = jwtSettings["Issuer"] ?? "https://localhost:7003",
+                Audience           = jwtSettings["Audience"] ?? "https://localhost:7003",
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
@@ -211,3 +212,4 @@ namespace QuanlyPhongtapGymFitnessClub.Services
         }
     }
 }
+

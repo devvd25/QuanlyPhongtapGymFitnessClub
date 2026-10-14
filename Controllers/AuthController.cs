@@ -36,9 +36,10 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                 token     = result.Token,
                 username  = result.Username,
                 role      = result.Role,
-                expiresAt = DateTime.UtcNow.AddHours(2),
+                expiresAt = DateTime.UtcNow.AddMinutes(60),
                 message   = result.Message
             });
         }
     }
 }
+
