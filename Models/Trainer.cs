@@ -1,10 +1,10 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QuanlyPhongtapGymFitnessClub.Models
 {
     /// <summary>
-    /// Model Ä‘áº¡i diá»‡n cho Huáº¥n luyá»‡n viĂªn cĂ¡ nhĂ¢n (Personal Trainer) trong phĂ²ng Gym
+    /// Model Ă„â€˜Ă¡ÂºÂ¡i diĂ¡Â»â€¡n cho HuĂ¡ÂºÂ¥n luyĂ¡Â»â€¡n viÄ‚Âªn cÄ‚Â¡ nhÄ‚Â¢n (Personal Trainer) trong phÄ‚Â²ng Gym
     /// </summary>
     public class Trainer
     {
@@ -39,9 +39,6 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         [MaxLength(50)]
         public string Specialty { get; set; } = "Gym"; // Gym, Fitness, Bodybuilding, Yoga, Boxing, Pilates
 
-        [Range(0, 50)]
-        public int ExperienceYears { get; set; } = 1;
-
         [MaxLength(200)]
         public string Certifications { get; set; } = string.Empty; // NASM, ISSA, ACE...
 
@@ -49,7 +46,7 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         public double Rating { get; set; } = 5.0;
 
         [Range(0, 10000000)]
-        public decimal HourlyRate { get; set; } = 300000; // GiĂ¡ thuĂª PT / giá» (VND)
+        public decimal HourlyRate { get; set; } = 300000; // GiÄ‚Â¡ thuÄ‚Âª PT / giĂ¡Â»Â (VND)
 
         public int MaxMembers { get; set; } = 10;
 

@@ -8,17 +8,15 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
     /// <summary>
     /// API Quản lý Sản phẩm / Dịch vụ phòng Gym (Nước uống, Thực phẩm bổ sung, Phụ kiện,...)
-    /// Áp dụng CRUD với Entity Framework Core, LINQ và async/await (Buổi 6)
+    /// Áp dụng CRUD với Entity Framework Core, LINQ và async/await
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
     public class ProductsController : ControllerBase
     {
-        // 1. Khai báo biến DbContext
         private readonly AppDbContext _context;
 
-        // 2. Inject AppDbContext thông qua Constructor
         public ProductsController(AppDbContext context)
         {
             _context = context;
@@ -31,6 +29,7 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         public async Task<ActionResult<List<ProductResponseDto>>> GetAll(
             [FromQuery] string? search,
             [FromQuery] string? category,
+            [FromQuery] bool? inStock,
             [FromQuery] decimal? minPrice,
             [FromQuery] decimal? maxPrice)
         {
@@ -48,6 +47,11 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                 query = query.Where(p => p.Category == category);
             }
 
+            if (inStock.HasValue && inStock.Value)
+            {
+                query = query.Where(p => p.StockQuantity > 0);
+            }
+
             if (minPrice.HasValue)
             {
                 query = query.Where(p => p.Price >= minPrice.Value);
@@ -59,7 +63,8 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
             }
 
             var products = await query
-                .OrderByDescending(p => p.CreatedAt)
+                .OrderBy(p => p.Category)
+                .ThenBy(p => p.Name)
                 .Select(p => new ProductResponseDto
                 {
                     Id = p.Id,
@@ -69,6 +74,7 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                     StockQuantity = p.StockQuantity,
                     Category = p.Category,
                     ImageUrl = p.ImageUrl,
+                    ManagedByStaffId = p.ManagedByStaffId,
                     IsActive = p.IsActive,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt
@@ -79,7 +85,7 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         }
 
         // ------------------------------------------------------------------------
-        // READ BY ID (GET) - Lấy thông tin chi tiết một sản phẩm theo Id
+        // READ BY ID (GET) - Lấy thông tin sản phẩm theo Id
         // ------------------------------------------------------------------------
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ProductResponseDto>> GetById(int id)
@@ -95,6 +101,7 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                     StockQuantity = p.StockQuantity,
                     Category = p.Category,
                     ImageUrl = p.ImageUrl,
+                    ManagedByStaffId = p.ManagedByStaffId,
                     IsActive = p.IsActive,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt
@@ -163,6 +170,38 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         }
 
         // ------------------------------------------------------------------------
+        // UPDATE STOCK (PATCH) - api/products/{id}/stock?quantity=10
+        // ------------------------------------------------------------------------
+        [HttpPatch("{id:int}/stock")]
+        public async Task<IActionResult> UpdateStock(int id, [FromQuery] int quantity)
+        {
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null)
+            {
+                return NotFound(new { message = $"Không tìm thấy sản phẩm có Id = {id}" });
+            }
+
+            if (product.StockQuantity + quantity < 0)
+            {
+                return BadRequest(new { message = $"Số lượng tồn kho không đủ. Hiện có: {product.StockQuantity}, yêu cầu giảm: {Math.Abs(quantity)}" });
+            }
+
+            var oldStock = product.StockQuantity;
+            product.StockQuantity += quantity;
+            product.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = $"Đã cập nhật kho sản phẩm '{product.Name}'",
+                productId = product.Id,
+                oldStock = oldStock,
+                newStock = product.StockQuantity
+            });
+        }
+
+        // ------------------------------------------------------------------------
         // DELETE (DELETE) - Xóa sản phẩm
         // ------------------------------------------------------------------------
         [HttpDelete("{id:int}")]
@@ -173,6 +212,12 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
             if (product == null)
             {
                 return NotFound(new { message = $"Không tìm thấy sản phẩm có Id = {id}" });
+            }
+
+            bool isUsed = await _context.InvoiceItems.AnyAsync(ii => ii.ProductId == id);
+            if (isUsed)
+            {
+                return BadRequest(new { message = "Không thể xóa sản phẩm đã xuất hiện trong hóa đơn. Bạn có thể cập nhật IsActive = false." });
             }
 
             _context.Products.Remove(product);
@@ -193,6 +238,7 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                 StockQuantity = p.StockQuantity,
                 Category = p.Category,
                 ImageUrl = p.ImageUrl,
+                ManagedByStaffId = p.ManagedByStaffId,
                 IsActive = p.IsActive,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt

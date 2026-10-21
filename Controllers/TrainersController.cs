@@ -1,156 +1,245 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using QuanlyPhongtapGymFitnessClub.Data;
 using QuanlyPhongtapGymFitnessClub.DTOs;
-using QuanlyPhongtapGymFitnessClub.Services;
-using Microsoft.AspNetCore.Mvc;
+using QuanlyPhongtapGymFitnessClub.Models;
 
 namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
     /// <summary>
-    /// API Quản lý Huấn luyện viên cá nhân
+    /// API Quan ly Huan luyen vien (Trainers)
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Produces("application/json")]
     public class TrainersController : ControllerBase
     {
-        private readonly ITrainerService _trainerService;
+        private readonly AppDbContext _db;
 
-        public TrainersController(ITrainerService trainerService)
+        public TrainersController(AppDbContext db)
         {
-            _trainerService = trainerService;
+            _db = db;
         }
 
-        /// <summary>
-        /// Lấy danh sách Huấn luyện viên
-        /// </summary>
-        /// <param name="search">Tìm theo tên, username hoặc chuyên môn</param>
-        /// <param name="specialty">Lọc theo chuyên môn</param>
-        /// <param name="minExperienceYears">Lọc theo số năm kinh nghiệm</param>
+        // GET api/trainers
         [HttpGet]
-        [ProducesResponseType(typeof(List<TrainerResponseDto>), StatusCodes.Status200OK)]
         public ActionResult<List<TrainerResponseDto>> GetAll(
             [FromQuery] string? search,
-            [FromQuery] string? specialty,
-            [FromQuery] int? minExperienceYears)
+            [FromQuery] string? specialty)
         {
-            var trainers = _trainerService.GetAll(search, specialty, minExperienceYears);
+            var query = _db.Trainers.Include(t => t.AssignedMembers).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(t => t.FullName.ToLower().Contains(s)
+                                      || t.Username.ToLower().Contains(s));
+            }
+
+            if (!string.IsNullOrWhiteSpace(specialty))
+                query = query.Where(t => t.Specialty == specialty);
+
+            var trainers = query.ToList().Select(t => new TrainerResponseDto
+            {
+                Id                  = t.Id,
+                Username            = t.Username,
+                FullName            = t.FullName,
+                Email               = t.Email,
+                Phone               = t.Phone,
+                Gender              = t.Gender,
+                DateOfBirth         = t.DateOfBirth,
+                Specialty           = t.Specialty,
+                Certifications      = t.Certifications,
+                Rating              = t.Rating,
+                HourlyRate          = t.HourlyRate,
+                MaxMembers          = t.MaxMembers,
+                CurrentMembersCount = t.AssignedMembers.Count,
+                AssignedMemberIds   = t.AssignedMembers.Select(m => m.Id).ToList(),
+                IsActive            = t.IsActive,
+                CreatedAt           = t.CreatedAt
+            }).ToList();
+
             return Ok(trainers);
         }
 
-        /// <summary>
-        /// Lấy thông tin Huấn luyện viên theo ID
-        /// </summary>
-        /// <param name="id">ID Huấn luyện viên</param>
+        // GET api/trainers/{id}
         [HttpGet("{id:int}")]
-        [ProducesResponseType(typeof(TrainerResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<TrainerResponseDto> GetById([FromRoute] int id)
+        public ActionResult<TrainerResponseDto> GetById(int id)
         {
-            var trainer = _trainerService.GetById(id);
-            if (trainer == null)
+            var t = _db.Trainers.Include(tr => tr.AssignedMembers)
+                                .FirstOrDefault(tr => tr.Id == id);
+
+            if (t == null)
+                return NotFound(new { message = $"Khong tim thay Huan luyen vien co Id = {id}" });
+
+            return Ok(new TrainerResponseDto
             {
-                return NotFound(new { message = $"Không tìm thấy Huấn luyện viên có Id = {id}" });
-            }
-            return Ok(trainer);
+                Id                  = t.Id,
+                Username            = t.Username,
+                FullName            = t.FullName,
+                Email               = t.Email,
+                Phone               = t.Phone,
+                Gender              = t.Gender,
+                DateOfBirth         = t.DateOfBirth,
+                Specialty           = t.Specialty,
+                Certifications      = t.Certifications,
+                Rating              = t.Rating,
+                HourlyRate          = t.HourlyRate,
+                MaxMembers          = t.MaxMembers,
+                CurrentMembersCount = t.AssignedMembers.Count,
+                AssignedMemberIds   = t.AssignedMembers.Select(m => m.Id).ToList(),
+                IsActive            = t.IsActive,
+                CreatedAt           = t.CreatedAt
+            });
         }
 
-        /// <summary>
-        /// Thêm Huấn luyện viên mới
-        /// </summary>
-        /// <param name="dto">Thông tin Huấn luyện viên</param>
+        // POST api/trainers
         [HttpPost]
-        [ProducesResponseType(typeof(TrainerResponseDto), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public ActionResult<TrainerResponseDto> Create([FromBody] TrainerCreateDto dto)
         {
-            var created = _trainerService.Create(dto);
+            bool isExist = _db.Trainers.Any(t => t.Username == dto.Username || t.Email == dto.Email);
+            if (isExist)
+                return BadRequest(new { message = "Username hoac Email da duoc su dung." });
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = created.Id },
-                created);
+            var newTrainer = new Trainer
+            {
+                Username       = dto.Username,
+                FullName       = dto.FullName,
+                Email          = dto.Email,
+                Phone          = dto.Phone,
+                Gender         = dto.Gender,
+                DateOfBirth    = dto.DateOfBirth,
+                Specialty      = dto.Specialty,
+                Certifications = dto.Certifications,
+                HourlyRate     = dto.HourlyRate,
+                MaxMembers     = dto.MaxMembers,
+                IsActive       = true,
+                CreatedAt      = DateTime.UtcNow
+            };
+
+            _db.Trainers.Add(newTrainer);
+            _db.SaveChanges();
+
+            var response = new TrainerResponseDto
+            {
+                Id                  = newTrainer.Id,
+                Username            = newTrainer.Username,
+                FullName            = newTrainer.FullName,
+                Email               = newTrainer.Email,
+                Phone               = newTrainer.Phone,
+                Gender              = newTrainer.Gender,
+                DateOfBirth         = newTrainer.DateOfBirth,
+                Specialty           = newTrainer.Specialty,
+                Certifications      = newTrainer.Certifications,
+                Rating              = newTrainer.Rating,
+                HourlyRate          = newTrainer.HourlyRate,
+                MaxMembers          = newTrainer.MaxMembers,
+                CurrentMembersCount = 0,
+                AssignedMemberIds   = new List<int>(),
+                IsActive            = newTrainer.IsActive,
+                CreatedAt           = newTrainer.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
-        /// <summary>
-        /// Cập nhật thông tin Huấn luyện viên
-        /// </summary>
-        /// <param name="id">ID Huấn luyện viên</param>
-        /// <param name="dto">Dữ liệu cập nhật</param>
+        // PUT api/trainers/{id}
         [HttpPut("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult Update([FromRoute] int id, [FromBody] TrainerUpdateDto dto)
+        public IActionResult Update(int id, [FromBody] TrainerUpdateDto dto)
         {
-            var updated = _trainerService.Update(id, dto);
-            if (updated == null)
-            {
-                return NotFound(new { message = $"Không tìm thấy Huấn luyện viên có Id = {id} để cập nhật" });
-            }
+            var trainer = _db.Trainers.FirstOrDefault(t => t.Id == id);
 
-            return NoContent();
-        }
-
-        /// <summary>
-        /// Xóa Huấn luyện viên theo ID
-        /// </summary>
-        /// <param name="id">ID Huấn luyện viên</param>
-        [HttpDelete("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult Delete([FromRoute] int id)
-        {
-            bool isDeleted = _trainerService.Delete(id);
-            if (!isDeleted)
-            {
-                return NotFound(new { message = $"Không tìm thấy Huấn luyện viên có Id = {id} để xóa" });
-            }
-
-            return NoContent();
-        }
-
-        /// <summary>
-        /// Lấy danh sách học viên của Huấn luyện viên
-        /// </summary>
-        /// <param name="id">ID Huấn luyện viên</param>
-        [HttpGet("{id:int}/members")]
-        [ProducesResponseType(typeof(List<UserResponseDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<List<UserResponseDto>> GetAssignedMembers([FromRoute] int id)
-        {
-            var trainer = _trainerService.GetById(id);
             if (trainer == null)
+                return NotFound(new { message = $"Khong tim thay Huan luyen vien co Id = {id}" });
+
+            if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != trainer.Email)
             {
-                return NotFound(new { message = $"Không tìm thấy Huấn luyện viên có Id = {id}" });
+                bool emailExists = _db.Trainers.Any(t => t.Email == dto.Email && t.Id != id);
+                if (emailExists)
+                    return BadRequest(new { message = "Email da duoc su dung boi Huan luyen vien khac." });
+                trainer.Email = dto.Email;
             }
 
-            var members = _trainerService.GetAssignedMembers(id);
+            if (!string.IsNullOrWhiteSpace(dto.FullName))       trainer.FullName       = dto.FullName;
+            if (!string.IsNullOrWhiteSpace(dto.Phone))          trainer.Phone          = dto.Phone;
+            if (!string.IsNullOrWhiteSpace(dto.Specialty))      trainer.Specialty      = dto.Specialty;
+            if (!string.IsNullOrWhiteSpace(dto.Certifications)) trainer.Certifications = dto.Certifications;
+            if (dto.HourlyRate.HasValue)                        trainer.HourlyRate     = dto.HourlyRate.Value;
+            if (dto.MaxMembers.HasValue)                        trainer.MaxMembers     = dto.MaxMembers.Value;
+            if (dto.IsActive.HasValue)                          trainer.IsActive       = dto.IsActive.Value;
+            trainer.UpdatedAt = DateTime.UtcNow;
+
+            _db.SaveChanges();
+
+            return Ok(new { message = $"Cap nhat thanh cong Huan luyen vien Id = {id}" });
+        }
+
+        // DELETE api/trainers/{id}
+        [HttpDelete("{id:int}")]
+        public IActionResult Delete(int id)
+        {
+            var trainer = _db.Trainers.FirstOrDefault(t => t.Id == id);
+
+            if (trainer == null)
+                return NotFound(new { message = $"Khong tim thay Huan luyen vien co Id = {id}" });
+
+            _db.Trainers.Remove(trainer);
+            _db.SaveChanges();
+
+            return Ok(new { message = $"Da xoa Huan luyen vien Id = {id}" });
+        }
+
+        // GET api/trainers/{id}/members
+        [HttpGet("{id:int}/members")]
+        public ActionResult<List<UserResponseDto>> GetAssignedMembers(int id)
+        {
+            var trainer = _db.Trainers.Include(t => t.AssignedMembers)
+                                      .FirstOrDefault(t => t.Id == id);
+
+            if (trainer == null)
+                return NotFound(new { message = $"Khong tim thay Huan luyen vien co Id = {id}" });
+
+            var members = trainer.AssignedMembers.Select(u => new UserResponseDto
+            {
+                Id                = u.Id,
+                Username          = u.Username,
+                FullName          = u.FullName,
+                Email             = u.Email,
+                Phone             = u.Phone,
+                MembershipPackage = u.MembershipPackage,
+                MembershipStatus  = u.MembershipStatus,
+                MembershipEndDate = u.MembershipEndDate,
+                IsActive          = u.IsActive,
+                CreatedAt         = u.CreatedAt
+            }).ToList();
+
             return Ok(members);
         }
 
-        /// <summary>
-        /// Phân công học viên cho Huấn luyện viên
-        /// </summary>
-        /// <param name="id">ID Huấn luyện viên</param>
-        /// <param name="memberId">ID học viên</param>
+        // POST api/trainers/{id}/members/{memberId}
         [HttpPost("{id:int}/members/{memberId:int}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult AssignMember([FromRoute] int id, [FromRoute] int memberId)
+        public IActionResult AssignMember(int id, int memberId)
         {
-            var trainer = _trainerService.GetById(id);
+            var trainer = _db.Trainers.Include(t => t.AssignedMembers)
+                                      .FirstOrDefault(t => t.Id == id);
+
             if (trainer == null)
-            {
-                return NotFound(new { message = $"Không tìm thấy Huấn luyện viên có Id = {id}" });
-            }
+                return NotFound(new { message = $"Khong tim thay Huan luyen vien co Id = {id}" });
 
-            bool success = _trainerService.AssignMember(id, memberId);
-            if (!success)
-            {
-                return BadRequest(new { message = $"Huấn luyện viên '{trainer.FullName}' đã đạt giới hạn tối đa ({trainer.MaxMembers} học viên)." });
-            }
+            if (trainer.AssignedMembers.Count >= trainer.MaxMembers)
+                return BadRequest(new { message = $"HLV '{trainer.FullName}' da dat gioi han toi da ({trainer.MaxMembers} hoc vien)." });
 
-            return Ok(new { message = $"Đã phân công hội viên Id = {memberId} cho HLV {trainer.FullName} thành công." });
+            if (trainer.AssignedMembers.Any(m => m.Id == memberId))
+                return Ok(new { message = "Hoi vien nay da duoc phan cong cho HLV nay roi." });
+
+            var user = _db.Users.FirstOrDefault(u => u.Id == memberId);
+            if (user == null)
+                return NotFound(new { message = $"Khong tim thay Hoi vien co Id = {memberId}" });
+
+            trainer.AssignedMembers.Add(user);
+            trainer.UpdatedAt = DateTime.UtcNow;
+            _db.SaveChanges();
+
+            return Ok(new { message = $"Da phan cong Hoi vien Id = {memberId} cho HLV {trainer.FullName} thanh cong." });
         }
     }
 }

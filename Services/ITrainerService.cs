@@ -7,7 +7,7 @@ namespace QuanlyPhongtapGymFitnessClub.Services
     /// </summary>
     public interface ITrainerService
     {
-        List<TrainerResponseDto> GetAll(string? search, string? specialty, int? minExperienceYears);
+        List<TrainerResponseDto> GetAll(string? search, string? specialty);
         TrainerResponseDto? GetById(int id);
         TrainerResponseDto Create(TrainerCreateDto dto);
         TrainerResponseDto? Update(int id, TrainerUpdateDto dto);

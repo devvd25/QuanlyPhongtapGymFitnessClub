@@ -1,133 +1,224 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using QuanlyPhongtapGymFitnessClub.Data;
 using QuanlyPhongtapGymFitnessClub.DTOs;
-using QuanlyPhongtapGymFitnessClub.Services;
-using Microsoft.AspNetCore.Mvc;
+using QuanlyPhongtapGymFitnessClub.Models;
 
 namespace QuanlyPhongtapGymFitnessClub.Controllers
 {
     /// <summary>
-    /// API Quản lý Nhân viên lễ tân và Bán hàng
+    /// API Quan ly Nhan vien le tan va Ban hang (Staffs)
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Produces("application/json")]
     public class StaffsController : ControllerBase
     {
-        private readonly IStaffService _staffService;
+        private readonly AppDbContext _db;
 
-        public StaffsController(IStaffService staffService)
+        public StaffsController(AppDbContext db)
         {
-            _staffService = staffService;
+            _db = db;
         }
 
-        /// <summary>
-        /// Lấy danh sách nhân viên
-        /// </summary>
-        /// <param name="search">Tìm theo tên, username hoặc phòng ban</param>
-        /// <param name="workShift">Lọc theo ca làm việc</param>
-        /// <param name="isOnDuty">Lọc theo trạng thái đang trực</param>
+        // ------------------------------------------------------------------------
+        // READ ALL (GET) - api/staffs
+        // ------------------------------------------------------------------------
         [HttpGet]
-        [ProducesResponseType(typeof(List<StaffResponseDto>), StatusCodes.Status200OK)]
         public ActionResult<List<StaffResponseDto>> GetAll(
             [FromQuery] string? search,
             [FromQuery] string? workShift,
             [FromQuery] bool? isOnDuty)
         {
-            var staffs = _staffService.GetAll(search, workShift, isOnDuty);
+            var query = _db.Staffs.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(st => st.FullName.ToLower().Contains(s)
+                                       || st.Username.ToLower().Contains(s)
+                                       || st.Department.ToLower().Contains(s));
+            }
+
+            if (!string.IsNullOrWhiteSpace(workShift))
+                query = query.Where(st => st.WorkShift == workShift);
+
+            if (isOnDuty.HasValue)
+                query = query.Where(st => st.IsOnDuty == isOnDuty.Value);
+
+            var staffs = query.Select(st => new StaffResponseDto
+            {
+                Id            = st.Id,
+                Username      = st.Username,
+                FullName      = st.FullName,
+                Email         = st.Email,
+                Phone         = st.Phone,
+                Gender        = st.Gender,
+                DateOfBirth   = st.DateOfBirth,
+                WorkShift     = st.WorkShift,
+                CounterNumber = st.CounterNumber,
+                Department    = st.Department,
+                HireDate      = st.HireDate,
+                IsOnDuty      = st.IsOnDuty,
+                IsActive      = st.IsActive,
+                CreatedAt     = st.CreatedAt
+            }).ToList();
+
             return Ok(staffs);
         }
 
-        /// <summary>
-        /// Lấy thông tin nhân viên theo ID
-        /// </summary>
-        /// <param name="id">ID nhân viên</param>
+        // ------------------------------------------------------------------------
+        // READ BY ID (GET) - api/staffs/{id}
+        // ------------------------------------------------------------------------
         [HttpGet("{id:int}")]
-        [ProducesResponseType(typeof(StaffResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<StaffResponseDto> GetById([FromRoute] int id)
+        public ActionResult<StaffResponseDto> GetById(int id)
         {
-            var staff = _staffService.GetById(id);
-            if (staff == null)
+            var st = _db.Staffs.FirstOrDefault(s => s.Id == id);
+
+            if (st == null)
+                return NotFound(new { message = $"Khong tim thay nhan vien co Id = {id}" });
+
+            return Ok(new StaffResponseDto
             {
-                return NotFound(new { message = $"Không tìm thấy nhân viên có Id = {id}" });
-            }
-            return Ok(staff);
+                Id            = st.Id,
+                Username      = st.Username,
+                FullName      = st.FullName,
+                Email         = st.Email,
+                Phone         = st.Phone,
+                Gender        = st.Gender,
+                DateOfBirth   = st.DateOfBirth,
+                WorkShift     = st.WorkShift,
+                CounterNumber = st.CounterNumber,
+                Department    = st.Department,
+                HireDate      = st.HireDate,
+                IsOnDuty      = st.IsOnDuty,
+                IsActive      = st.IsActive,
+                CreatedAt     = st.CreatedAt
+            });
         }
 
-        /// <summary>
-        /// Thêm nhân viên mới
-        /// </summary>
-        /// <param name="dto">Thông tin nhân viên</param>
+        // ------------------------------------------------------------------------
+        // CREATE (POST) - api/staffs
+        // ------------------------------------------------------------------------
         [HttpPost]
-        [ProducesResponseType(typeof(StaffResponseDto), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public ActionResult<StaffResponseDto> Create([FromBody] StaffCreateDto dto)
         {
-            var created = _staffService.Create(dto);
+            bool isExist = _db.Staffs.Any(s => s.Username == dto.Username || s.Email == dto.Email);
+            if (isExist)
+                return BadRequest(new { message = "Username hoac Email da duoc su dung." });
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = created.Id },
-                created);
+            var newStaff = new Staff
+            {
+                Username      = dto.Username,
+                FullName      = dto.FullName,
+                Email         = dto.Email,
+                Phone         = dto.Phone,
+                Gender        = dto.Gender,
+                DateOfBirth   = dto.DateOfBirth,
+                WorkShift     = dto.WorkShift,
+                CounterNumber = dto.CounterNumber,
+                Department    = dto.Department,
+                HireDate      = DateTime.UtcNow,
+                IsOnDuty      = false,
+                IsActive      = true,
+                CreatedAt     = DateTime.UtcNow
+            };
+
+            _db.Staffs.Add(newStaff);
+            _db.SaveChanges();
+
+            var response = new StaffResponseDto
+            {
+                Id            = newStaff.Id,
+                Username      = newStaff.Username,
+                FullName      = newStaff.FullName,
+                Email         = newStaff.Email,
+                Phone         = newStaff.Phone,
+                Gender        = newStaff.Gender,
+                DateOfBirth   = newStaff.DateOfBirth,
+                WorkShift     = newStaff.WorkShift,
+                CounterNumber = newStaff.CounterNumber,
+                Department    = newStaff.Department,
+                HireDate      = newStaff.HireDate,
+                IsOnDuty      = newStaff.IsOnDuty,
+                IsActive      = newStaff.IsActive,
+                CreatedAt     = newStaff.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetById), new { id = newStaff.Id }, response);
         }
 
-        /// <summary>
-        /// Cập nhật thông tin nhân viên
-        /// </summary>
-        /// <param name="id">ID nhân viên</param>
-        /// <param name="dto">Dữ liệu cập nhật</param>
+        // ------------------------------------------------------------------------
+        // UPDATE (PUT) - api/staffs/{id}
+        // ------------------------------------------------------------------------
         [HttpPut("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult Update([FromRoute] int id, [FromBody] StaffUpdateDto dto)
+        public IActionResult Update(int id, [FromBody] StaffUpdateDto dto)
         {
-            var updated = _staffService.Update(id, dto);
-            if (updated == null)
+            var staff = _db.Staffs.FirstOrDefault(s => s.Id == id);
+
+            if (staff == null)
+                return NotFound(new { message = $"Khong tim thay nhan vien co Id = {id}" });
+
+            if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != staff.Email)
             {
-                return NotFound(new { message = $"Không tìm thấy nhân viên có Id = {id} để cập nhật" });
+                bool emailExists = _db.Staffs.Any(s => s.Email == dto.Email && s.Id != id);
+                if (emailExists)
+                    return BadRequest(new { message = "Email da duoc su dung boi nhan vien khac." });
+                staff.Email = dto.Email;
             }
 
-            return NoContent();
+            if (!string.IsNullOrWhiteSpace(dto.FullName))   staff.FullName   = dto.FullName;
+            if (!string.IsNullOrWhiteSpace(dto.Phone))      staff.Phone      = dto.Phone;
+            if (!string.IsNullOrWhiteSpace(dto.WorkShift))  staff.WorkShift  = dto.WorkShift;
+            if (!string.IsNullOrWhiteSpace(dto.Department)) staff.Department = dto.Department;
+            if (dto.CounterNumber.HasValue)                 staff.CounterNumber = dto.CounterNumber.Value;
+            if (dto.IsOnDuty.HasValue)                      staff.IsOnDuty      = dto.IsOnDuty.Value;
+            if (dto.IsActive.HasValue)                      staff.IsActive      = dto.IsActive.Value;
+            staff.UpdatedAt = DateTime.UtcNow;
+
+            _db.SaveChanges();
+
+            return Ok(new { message = $"Cap nhat thanh cong nhan vien Id = {id}" });
         }
 
-        /// <summary>
-        /// Xóa nhân viên theo ID
-        /// </summary>
-        /// <param name="id">ID nhân viên</param>
+        // ------------------------------------------------------------------------
+        // DELETE - api/staffs/{id}
+        // ------------------------------------------------------------------------
         [HttpDelete("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult Delete([FromRoute] int id)
+        public IActionResult Delete(int id)
         {
-            bool isDeleted = _staffService.Delete(id);
-            if (!isDeleted)
-            {
-                return NotFound(new { message = $"Không tìm thấy nhân viên có Id = {id} để xóa" });
-            }
+            var staff = _db.Staffs.FirstOrDefault(s => s.Id == id);
 
-            return NoContent();
+            if (staff == null)
+                return NotFound(new { message = $"Khong tim thay nhan vien co Id = {id}" });
+
+            bool hasInvoices = _db.Invoices.Any(i => i.StaffId == id);
+            if (hasInvoices)
+                return BadRequest(new { message = "Khong the xoa nhan vien nay vi da co hoa don duoc lap boi nhan vien. Ban co the cap nhat IsActive = false de khoa." });
+
+            _db.Staffs.Remove(staff);
+            _db.SaveChanges();
+
+            return Ok(new { message = $"Da xoa nhan vien Id = {id}" });
         }
 
-        /// <summary>
-        /// Đổi trạng thái trực ca của nhân viên
-        /// </summary>
-        /// <param name="id">ID nhân viên</param>
+        // ------------------------------------------------------------------------
+        // TOGGLE DUTY STATUS (PATCH) - api/staffs/{id}/toggle-duty
+        // ------------------------------------------------------------------------
         [HttpPatch("{id:int}/toggle-duty")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult ToggleDutyStatus([FromRoute] int id)
+        public IActionResult ToggleDutyStatus(int id)
         {
-            bool success = _staffService.ToggleDutyStatus(id);
-            if (!success)
-            {
-                return NotFound(new { message = $"Không tìm thấy nhân viên có Id = {id}" });
-            }
+            var staff = _db.Staffs.FirstOrDefault(s => s.Id == id);
 
-            var staff = _staffService.GetById(id);
+            if (staff == null)
+                return NotFound(new { message = $"Khong tim thay nhan vien co Id = {id}" });
+
+            staff.IsOnDuty  = !staff.IsOnDuty;
+            staff.UpdatedAt = DateTime.UtcNow;
+            _db.SaveChanges();
+
             return Ok(new
             {
-                message = $"Đã cập nhật trạng thái trực ca của nhân viên {staff?.FullName} thành công.",
-                isOnDuty = staff?.IsOnDuty
+                message  = $"Da cap nhat trang thai truc ca cua {staff.FullName}.",
+                isOnDuty = staff.IsOnDuty
             });
         }
     }
