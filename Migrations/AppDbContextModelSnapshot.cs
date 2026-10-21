@@ -49,6 +49,9 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("ManagedByStaffId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -64,6 +67,8 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ManagedByStaffId");
 
                     b.ToTable("Products");
                 });
@@ -144,10 +149,6 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.PrimitiveCollection<string>("AssignedMemberIds")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Certifications")
                         .IsRequired()
@@ -314,6 +315,9 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("RegisteredByStaffId")
+                        .HasColumnType("int");
+
                     b.Property<int>("RemainingPtSessions")
                         .HasColumnType("int");
 
@@ -335,13 +339,53 @@ namespace QuanlyPhongtapGymFitnessClub.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AssignedTrainerId");
+
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("RegisteredByStaffId");
 
                     b.HasIndex("Username")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Product", b =>
+                {
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Staff", "ManagedByStaff")
+                        .WithMany("ManagedProducts")
+                        .HasForeignKey("ManagedByStaffId");
+
+                    b.Navigation("ManagedByStaff");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.User", b =>
+                {
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Trainer", "AssignedTrainer")
+                        .WithMany("AssignedMembers")
+                        .HasForeignKey("AssignedTrainerId");
+
+                    b.HasOne("QuanlyPhongtapGymFitnessClub.Models.Staff", "RegisteredByStaff")
+                        .WithMany("RegisteredUsers")
+                        .HasForeignKey("RegisteredByStaffId");
+
+                    b.Navigation("AssignedTrainer");
+
+                    b.Navigation("RegisteredByStaff");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Staff", b =>
+                {
+                    b.Navigation("ManagedProducts");
+
+                    b.Navigation("RegisteredUsers");
+                });
+
+            modelBuilder.Entity("QuanlyPhongtapGymFitnessClub.Models.Trainer", b =>
+                {
+                    b.Navigation("AssignedMembers");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QuanlyPhongtapGymFitnessClub.Models
@@ -48,6 +48,10 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         public DateTime HireDate { get; set; } = DateTime.UtcNow;
 
         public bool IsOnDuty { get; set; } = true; // Äang trong ca lĂ m viá»‡c
+
+        // Relational properties
+        public virtual ICollection<User> RegisteredUsers { get; set; } = new List<User>();
+        public virtual ICollection<Product> ManagedProducts { get; set; } = new List<Product>();
 
         public bool IsActive { get; set; } = true;
 

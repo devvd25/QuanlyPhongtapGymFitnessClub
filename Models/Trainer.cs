@@ -53,7 +53,8 @@ namespace QuanlyPhongtapGymFitnessClub.Models
 
         public int MaxMembers { get; set; } = 10;
 
-        public List<int> AssignedMemberIds { get; set; } = new();
+        // Relational properties
+        public virtual ICollection<User> AssignedMembers { get; set; } = new List<User>();
 
         public bool IsActive { get; set; } = true;
 
