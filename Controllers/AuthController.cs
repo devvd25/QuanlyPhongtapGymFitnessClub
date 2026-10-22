@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using QuanlyPhongtapGymFitnessClub.DTOs;
 using QuanlyPhongtapGymFitnessClub.Services;
 
@@ -37,6 +37,26 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
                 username  = request.Username,
                 expiresAt = DateTime.UtcNow.AddMinutes(60),
                 message   = "Dang nhap thanh cong!"
+            });
+        }
+
+        // ------------------------------------------------------------------------
+        // GET CURRENT USER (GET) - api/auth/me (Yêu cầu phải có Token)
+        // ------------------------------------------------------------------------
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("me")]
+        public IActionResult GetCurrentUser()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            return Ok(new
+            {
+                userId,
+                username,
+                role,
+                message = "Xác thực JWT Token thành công!"
             });
         }
     }

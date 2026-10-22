@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanlyPhongtapGymFitnessClub.Data;
@@ -117,8 +118,9 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         }
 
         // ------------------------------------------------------------------------
-        // CREATE (POST) - Thêm mới sản phẩm phòng tập
+        // CREATE (POST) - Thêm mới sản phẩm phòng tập (Chỉ Admin)
         // ------------------------------------------------------------------------
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<ProductResponseDto>> Create([FromBody] ProductCreateDto request)
         {
@@ -142,8 +144,9 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         }
 
         // ------------------------------------------------------------------------
-        // UPDATE (PUT) - Cập nhật thông tin sản phẩm
+        // UPDATE (PUT) - Cập nhật thông tin sản phẩm (Chỉ Admin)
         // ------------------------------------------------------------------------
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id:int}")]
         public async Task<ActionResult<ProductResponseDto>> Update(int id, [FromBody] ProductUpdateDto request)
         {
@@ -170,8 +173,9 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         }
 
         // ------------------------------------------------------------------------
-        // UPDATE STOCK (PATCH) - api/products/{id}/stock?quantity=10
+        // UPDATE STOCK (PATCH) - api/products/{id}/stock?quantity=10 (Chỉ Admin)
         // ------------------------------------------------------------------------
+        [Authorize(Roles = "Admin")]
         [HttpPatch("{id:int}/stock")]
         public async Task<IActionResult> UpdateStock(int id, [FromQuery] int quantity)
         {
@@ -202,8 +206,9 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         }
 
         // ------------------------------------------------------------------------
-        // DELETE (DELETE) - Xóa sản phẩm
+        // DELETE (DELETE) - Xóa sản phẩm (Chỉ Admin)
         // ------------------------------------------------------------------------
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
