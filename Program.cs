@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QuanlyPhongtapGymFitnessClub.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -82,6 +82,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // ================= DANG KY DEPENDENCY INJECTION (3-TIER REPOSITORY & SERVICE) =================
+builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Repositories.IFileRepository, QuanlyPhongtapGymFitnessClub.Repositories.FileRepository>();
+builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.IFileService, QuanlyPhongtapGymFitnessClub.Services.FileService>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Repositories.IAuthRepository, QuanlyPhongtapGymFitnessClub.Repositories.AuthRepository>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Services.IAuthService, QuanlyPhongtapGymFitnessClub.Services.AuthService>();
 builder.Services.AddScoped<QuanlyPhongtapGymFitnessClub.Repositories.IUserRepository, QuanlyPhongtapGymFitnessClub.Repositories.UserRepository>();

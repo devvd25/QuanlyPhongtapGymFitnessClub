@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QuanlyPhongtapGymFitnessClub.Models;
 
 namespace QuanlyPhongtapGymFitnessClub.Data
@@ -18,6 +18,7 @@ namespace QuanlyPhongtapGymFitnessClub.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
+        public DbSet<StoredFile> StoredFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
