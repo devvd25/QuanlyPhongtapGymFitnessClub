@@ -8,3 +8,4 @@ namespace QuanlyPhongtapGymFitnessClub.Repositories
         Task<StoredFile?> GetByIdAsync(int id);
     }
 }
+

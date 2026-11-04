@@ -22,6 +22,7 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
         // POST api/files/upload
         [HttpPost("upload")]
         [Consumes("multipart/form-data")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
         public async Task<ActionResult<FileResponseDto>> Upload([FromForm] UploadFileDto dto)
         {
             try

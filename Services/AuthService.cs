@@ -1,4 +1,4 @@
-﻿using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
 using QuanlyPhongtapGymFitnessClub.DTOs;
 using QuanlyPhongtapGymFitnessClub.Models;
 using QuanlyPhongtapGymFitnessClub.Repositories;
@@ -60,12 +60,12 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? "Scretkey123456789123456789123456789123456789");
 
-            // Khai bao cac Claims cho Token (Phuc vu cho viec phan quyen Authorization)
+            // Khai bao cac Claims cho Token theo chuan JWT ngan gon (sub, name, role)
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Role, role)
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, username),
+                new Claim("role", role)
             };
 
             var key = new SymmetricSecurityKey(secretKey);

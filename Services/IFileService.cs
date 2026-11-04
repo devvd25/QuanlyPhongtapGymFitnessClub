@@ -9,3 +9,4 @@ namespace QuanlyPhongtapGymFitnessClub.Services
         Task<FileDownloadDto?> GetFileForDownloadAsync(int id);
     }
 }
+

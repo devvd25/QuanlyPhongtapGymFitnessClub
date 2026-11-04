@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
@@ -80,6 +81,7 @@ namespace QuanlyPhongtapGymFitnessClub.Services
         {
             string role = string.Empty;
             string username = string.Empty;
+            int userId = 0;
 
             if (request.Username == _adminUsername && request.Password == _adminPassword)
             {
@@ -107,6 +109,7 @@ namespace QuanlyPhongtapGymFitnessClub.Services
 
                 role = "Member";
                 username = user.Username;
+                userId = user.Id;
 
                 user.LastLoginAt = DateTime.UtcNow;
                 _userRepo.Update(user);
@@ -123,8 +126,9 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.Name, username),
-                    new Claim(ClaimTypes.Role, role)
+                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Name, username),
+                    new Claim("role", role)
                 }),
                 Expires            = DateTime.UtcNow.AddMinutes(expiryMinutes),
                 Issuer             = jwtSettings["Issuer"] ?? "https://localhost:7003",

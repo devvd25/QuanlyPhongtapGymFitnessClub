@@ -10,3 +10,4 @@ namespace QuanlyPhongtapGymFitnessClub.Models
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     }
 }
+
