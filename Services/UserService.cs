@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using QuanlyPhongtapGymFitnessClub.DTOs;
+using QuanlyPhongtapGymFitnessClub.DTOs.Common;
 using QuanlyPhongtapGymFitnessClub.Models;
 using QuanlyPhongtapGymFitnessClub.Repositories;
 
@@ -25,10 +26,20 @@ namespace QuanlyPhongtapGymFitnessClub.Services
             _config = config;
         }
 
-        public async Task<List<UserResponseDto>> GetAllAsync(string? search = null, string? membershipStatus = null)
+        public async Task<PagedResult<UserResponseDto>> GetAllAsync(UserQueryParameters queryParams)
         {
-            var users = await _userRepo.GetAllAsync(search, membershipStatus);
-            return users.Select(MapToResponseDto).ToList();
+            var pagedUsers = await _userRepo.GetAllAsync(queryParams);
+
+            // Map danh sách Entity sang DTO
+            var mappedItems = pagedUsers.Items.Select(MapToResponseDto).ToList();
+
+            // Trả về PagedResult chứa DTO
+            return new PagedResult<UserResponseDto>(
+                mappedItems,
+                pagedUsers.TotalCount,
+                pagedUsers.PageNumber,
+                pagedUsers.PageSize
+            );
         }
 
         public async Task<UserResponseDto?> GetByIdAsync(int id)

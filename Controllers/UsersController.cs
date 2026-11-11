@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuanlyPhongtapGymFitnessClub.DTOs;
+using QuanlyPhongtapGymFitnessClub.DTOs.Common;
 using QuanlyPhongtapGymFitnessClub.Services;
 
 namespace QuanlyPhongtapGymFitnessClub.Controllers
@@ -25,12 +26,10 @@ namespace QuanlyPhongtapGymFitnessClub.Controllers
 
         // GET api/users
         [HttpGet]
-        public async Task<ActionResult<List<UserResponseDto>>> GetAll(
-            [FromQuery] string? search,
-            [FromQuery] string? membershipStatus)
+        public async Task<ActionResult<PagedResult<UserResponseDto>>> GetAll([FromQuery] UserQueryParameters queryParams)
         {
-            var users = await _userService.GetAllAsync(search, membershipStatus);
-            return Ok(users);
+            var result = await _userService.GetAllAsync(queryParams);
+            return Ok(result);
         }
 
         // GET api/users/{id}

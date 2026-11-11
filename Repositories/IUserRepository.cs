@@ -1,4 +1,5 @@
-﻿using QuanlyPhongtapGymFitnessClub.Models;
+using QuanlyPhongtapGymFitnessClub.DTOs.Common;
+using QuanlyPhongtapGymFitnessClub.Models;
 
 namespace QuanlyPhongtapGymFitnessClub.Repositories
 {
@@ -8,7 +9,7 @@ namespace QuanlyPhongtapGymFitnessClub.Repositories
     /// </summary>
     public interface IUserRepository
     {
-        Task<List<User>> GetAllAsync(string? search = null, string? membershipStatus = null);
+        Task<PagedResult<User>> GetAllAsync(UserQueryParameters queryParams);
         Task<User?> GetByIdAsync(int id);
         Task<User?> GetByUsernameOrEmailAsync(string username, string email);
         Task AddAsync(User user);

@@ -1,4 +1,5 @@
-﻿using QuanlyPhongtapGymFitnessClub.DTOs;
+using QuanlyPhongtapGymFitnessClub.DTOs;
+using QuanlyPhongtapGymFitnessClub.DTOs.Common;
 
 namespace QuanlyPhongtapGymFitnessClub.Services
 {
@@ -7,7 +8,7 @@ namespace QuanlyPhongtapGymFitnessClub.Services
     /// </summary>
     public interface IUserService
     {
-        Task<List<UserResponseDto>> GetAllAsync(string? search = null, string? membershipStatus = null);
+        Task<PagedResult<UserResponseDto>> GetAllAsync(UserQueryParameters queryParams);
         Task<UserResponseDto?> GetByIdAsync(int id);
         Task<(bool IsSuccess, string Message, UserResponseDto? Data)> RegisterAsync(UserRegisterDto request);
         Task<(bool IsSuccess, string Message, string? Token, string? Username, string? Role)> LoginAsync(UserLoginDto request);
